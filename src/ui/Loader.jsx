@@ -6,9 +6,7 @@ export default function Loader() {
   const ready = useUI((s) => s.ready)
   return (
     <div className={`loader ${ready ? 'done' : ''}`} aria-hidden={ready}>
-      <div className="loader-key">
-        <span>esc</span>
-      </div>
+      <div className="bubble loader-bubble" />
       <p>Loading my mind… {Math.round(progress)}%</p>
     </div>
   )

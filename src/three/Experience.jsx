@@ -7,7 +7,6 @@ import { scroll, useUI, world } from '../lib/store.js'
 import { damp } from '../lib/math.js'
 import { glowTexture } from '../lib/textures.js'
 import Portrait from './Portrait.jsx'
-import TraitKeys from './TraitKeys.jsx'
 import CameraRig from './CameraRig.jsx'
 import { GLOW, skullOpen } from './Mind.jsx'
 
@@ -99,7 +98,6 @@ export default function Experience() {
         <Backdrop />
         <Dust />
         <Portrait />
-        <TraitKeys />
         <CameraRig />
       </Suspense>
       <EffectComposer multisampling={small ? 0 : 4}>

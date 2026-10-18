@@ -14,6 +14,7 @@ export const world = {
   hero: 0, // smoothed hero progress
   about: 0, // smoothed: how far the About section has come into view
   head: null, // the head that opens: { center, cutY, hinge } in world units
+  opening: null, // where the open skull is on screen, in CSS pixels: { x, y } (the bubbles rise from here)
 }
 
 // Small subscribable store for the bits of UI that need React re-renders.

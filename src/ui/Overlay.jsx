@@ -20,7 +20,7 @@ export function Captions() {
       </div>
       <div className="caption caption-mind">
         <p className="eyebrow">Inside my head</p>
-        <h2>{traits.length} keys, always pressed.</h2>
+        <h2>{traits.length} thoughts, always floating.</h2>
       </div>
     </div>
   )

@@ -2,7 +2,7 @@
 
 A dark, scroll-driven portfolio.
 
-1. **Intro (3D):** a cutout of my Ghibli-style portrait. Its eyes follow the mouse and it blinks. On scroll, the top of the head swings open, the face lights up (brows lift, a smile, a blush), and my traits fly out as keyboard keycaps.
+1. **Intro (3D):** a cutout of my Ghibli-style portrait. Its eyes follow the mouse and it blinks. On scroll, the top of the head swings open on a glowing brain, the face lights up (brows lift, a smile, a blush), and my traits float out as soap bubbles you can grab, fling and bump into each other.
 2. **About:** summary, education and skills, taken from my résumé.
 3. **Journey:** a timeline of my progress year by year, from day one of college to now. It combines milestones, every project on my GitHub, and résumé details for the featured ones.
 4. **Beyond the code:** leadership and certifications.
@@ -26,7 +26,7 @@ Almost everything personal lives in **`src/content.js`**:
 | What | Key |
 | --- | --- |
 | Name, tagline, availability, links, optional résumé file | `profile` |
-| The words on the keycaps | `traits` |
+| The words in the bubbles | `traits` |
 | Summary, education, skills, leadership & certifications | `about` |
 | Non-GitHub moments on the timeline | `journey.milestones` |
 | Work that isn't a public repo (e.g. the banking API) | `journey.extraProjects` |
@@ -56,9 +56,9 @@ python scripts/make-portrait.py path/to/picture.png --cut 418
 - `src/three/Experience.jsx` holds the canvas, lights, dark backdrop and post-processing. Rendering stops once the portrait has scrolled away (after the About section on wide screens).
 - `src/three/Portrait.jsx` handles the cutout: the lid, the glowing opening and light beam, and the face rig. The face rig is a shader that repaints the eyes (iris follows the pointer, blinking) and adds the expression (brows lift, eyes widen, mouth corners lift, blush).
 - `src/three/Mind.jsx` holds the head-opening timing, glow and rising specks.
-- `src/three/TraitKeys.jsx` handles the keycaps and their choreography.
+- `src/ui/Bubbles.jsx` holds the trait bubbles: HTML over the canvas with a small physics simulation (rise from the head, collisions, cursor push, drag and fling, pop).
 - `src/three/frame.js` sets the widest the intro framing ever gets (the portrait can be bigger, never smaller). `src/three/CameraRig.jsx` sets the camera path: a close first view, easing out to that frame, then a pan so the portrait sits beside the About text.
-- `src/ui/About.jsx` contains the About and "Beyond the code" sections. `src/ui/Timeline.jsx` is the journey section: years alternate sides of a wavy SVG line that fills as you scroll. `src/ui/Overlay.jsx` has the captions, top bar and closing section.
+- `src/ui/About.jsx` contains the About and "Beyond the code" sections. `src/ui/Timeline.jsx` is the journey section: years alternate sides of a meandering line that behaves like a string. It ripples when you scroll or sweep the mouse across it, and fills down to a glowing tip as you scroll. `src/ui/Overlay.jsx` has the captions, top bar and closing section.
 
 The build uses relative paths (`base: './'`), so the `dist/` folder works on Vercel, Netlify or GitHub Pages without changes.
 # PortfolioV2

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import Experience from './three/Experience.jsx'
 import Loader from './ui/Loader.jsx'
+import Bubbles from './ui/Bubbles.jsx'
 import Timeline from './ui/Timeline.jsx'
 import { About, Highlights } from './ui/About.jsx'
 import { Captions, EndSection, TopBar } from './ui/Overlay.jsx'
@@ -24,6 +25,7 @@ export default function App() {
         <Experience />
       </div>
       <Captions />
+      <Bubbles />
       <TopBar />
       <Loader />
       <main id="top">

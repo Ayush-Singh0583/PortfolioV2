@@ -198,6 +198,80 @@ main {
   opacity: min(clamp(0, calc((var(--hero, 0) - 0.5) * 10), 1), clamp(0, calc((0.86 - var(--hero, 0)) * 12), 1));
 }
 
+/* ---------- trait bubbles ---------- */
+
+.bubbles {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.bubble {
+  --tint: 255, 177, 92;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.15;
+  color: #f7f2e8;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
+  visibility: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  will-change: transform;
+  /* soap film: clear middle, a highlight, and an iridescent rim in the bubble's tint */
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.6) 0 6%, rgba(255, 255, 255, 0) 17%),
+    radial-gradient(circle at 72% 80%, rgba(255, 255, 255, 0.22) 0 4%, rgba(255, 255, 255, 0) 12%),
+    radial-gradient(circle, rgba(var(--tint), 0.04) 0 52%, rgba(var(--tint), 0.22) 74%, rgba(var(--tint), 0.5) 92%, rgba(255, 255, 255, 0.55) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 0 22px rgba(var(--tint), 0.25),
+    0 10px 30px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(2px) saturate(1.4);
+  -webkit-backdrop-filter: blur(2px) saturate(1.4);
+}
+
+/* A slowly turning rainbow sheen on the film. */
+.bubble::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(255, 90, 170, 0.22), rgba(90, 200, 255, 0.22), rgba(255, 230, 90, 0.2), rgba(150, 255, 190, 0.2), rgba(255, 90, 170, 0.22));
+  mask: radial-gradient(circle, transparent 58%, #000 86%);
+  -webkit-mask: radial-gradient(circle, transparent 58%, #000 86%);
+  mix-blend-mode: screen;
+  animation: sheen 9s linear infinite;
+  pointer-events: none;
+}
+
+.bubble span {
+  position: relative;
+  max-width: 76%;
+}
+
+.bubble.shown {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.bubble.held {
+  cursor: grabbing;
+}
+
+@keyframes sheen {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ---------- top bar ---------- */
 
 .topbar {
@@ -831,23 +905,13 @@ main {
   visibility: hidden;
 }
 
-.loader-key {
-  display: grid;
-  place-items: center;
-  width: 68px;
-  height: 64px;
-  border-radius: 12px;
-  background: linear-gradient(#f0eadb, #d6cfbd);
-  box-shadow:
-    0 7px 0 #9f9886,
-    0 14px 30px rgba(0, 0, 0, 0.5);
-  animation: press 1.2s ease-in-out infinite;
-}
-
-.loader-key span {
-  font: 600 13px/1 var(--mono);
-  text-transform: lowercase;
-  color: #26262b;
+.loader-bubble {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  visibility: visible;
+  cursor: default;
+  animation: float 2.4s ease-in-out infinite;
 }
 
 /* ---------- motion ---------- */
@@ -858,20 +922,9 @@ main {
   }
 }
 
-@keyframes press {
-  0%,
-  60%,
-  100% {
-    transform: translateY(0);
-    box-shadow:
-      0 7px 0 #9f9886,
-      0 14px 30px rgba(0, 0, 0, 0.5);
-  }
-  75% {
-    transform: translateY(5px);
-    box-shadow:
-      0 2px 0 #9f9886,
-      0 6px 16px rgba(0, 0, 0, 0.5);
+@keyframes float {
+  50% {
+    transform: translateY(-10px) scale(1.04, 0.97);
   }
 }
 

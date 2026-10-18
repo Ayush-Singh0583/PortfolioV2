@@ -265,6 +265,10 @@ export default function Portrait() {
 
     // Where the face is on screen, and where the pointer is relative to it (in screen-height units).
     const e = eyes.current
+    // Tell the bubbles (plain HTML over the canvas) where the open skull is on screen.
+    e.face.copy(layout.cut).project(camera)
+    world.opening = { x: ((e.face.x + 1) / 2) * size.width, y: ((1 - e.face.y) / 2) * size.height }
+
     e.face.set(0, layout.head.center.y, 0).project(camera)
     const dx = (pointer.x - e.face.x) * (size.width / size.height)
     const dy = pointer.y - e.face.y
