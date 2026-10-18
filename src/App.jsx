@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import Experience from './three/Experience.jsx'
 import Loader from './ui/Loader.jsx'
 import Bubbles from './ui/Bubbles.jsx'
+import Sky from './ui/Sky.jsx'
 import Timeline from './ui/Timeline.jsx'
 import { About, Highlights } from './ui/About.jsx'
 import Contact from './ui/Contact.jsx'
@@ -17,8 +18,10 @@ export default function App() {
 
   return (
     <>
-      {/* Behind everything: the portrait, blurred, on the intro's blue glow. It shows
-          through as the 3D scene fades, so the page never cuts to black. */}
+      {/* Behind everything: the night sky. */}
+      <Sky />
+      {/* Then the portrait, blurred, which fades in as the 3D scene fades out, so the page
+          never cuts to black. */}
       <div className="backdrop" aria-hidden="true">
         <img src={`${import.meta.env.BASE_URL}portrait/blur.webp`} alt="" />
       </div>

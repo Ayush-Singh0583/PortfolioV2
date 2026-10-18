@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useRef } from 'react'
+import { Suspense, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Bloom, EffectComposer, ToneMapping, Vignette } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
@@ -9,8 +9,6 @@ import { glowTexture } from '../lib/textures.js'
 import Portrait from './Portrait.jsx'
 import CameraRig from './CameraRig.jsx'
 import { GLOW, skullOpen } from './Mind.jsx'
-
-const BG = '#07080c'
 
 // Runs before everything else each frame: smooths scroll progress.
 function Director() {
@@ -32,34 +30,8 @@ function Lights() {
   )
 }
 
-// A little dust drifting slowly upward through the light.
-function Dust({ count = 220 }) {
-  const ref = useRef()
-  const seeds = useMemo(
-    () => Array.from({ length: count }, () => ({ x: (Math.random() - 0.5) * 7, y: Math.random() * 3.4, z: -2.2 + Math.random() * 3, speed: 0.03 + Math.random() * 0.06, phase: Math.random() * 6 })),
-    [count],
-  )
-  const positions = useMemo(() => new Float32Array(count * 3), [count])
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime
-    seeds.forEach((s, i) => {
-      positions[i * 3] = s.x + Math.sin(t * 0.2 + s.phase) * 0.15
-      positions[i * 3 + 1] = 0.2 + ((s.y + t * s.speed) % 3.4)
-      positions[i * 3 + 2] = s.z
-    })
-    ref.current.geometry.attributes.position.needsUpdate = true
-  })
-  return (
-    <points ref={ref} frustumCulled={false}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-      </bufferGeometry>
-      <pointsMaterial map={glowTexture()} color="#5d669a" size={0.025} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
-    </points>
-  )
-}
-
-// Dark studio backdrop: a soft indigo glow behind the portrait that warms up while the head is open.
+// A soft indigo glow behind the portrait that warms up while the head is open. The canvas
+// itself is transparent, so the night sky (src/ui/Sky.jsx) shows around it.
 function Backdrop() {
   const warm = useRef()
   useFrame(() => warm.current.color.copy(GLOW).multiplyScalar(0.22 * skullOpen(world.hero)))
@@ -89,14 +61,13 @@ export default function Experience() {
       eventPrefix="client"
       dpr={[1, small ? 1.5 : 1.75]}
       camera={{ fov: 40, near: 0.05, far: 60, position: [0, 1.4, 2] }}
-      gl={{ antialias: false, powerPreference: 'high-performance' }}
+      gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
+      onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
     >
-      <color attach="background" args={[BG]} />
       <Lights />
       <Director />
       <Suspense fallback={null}>
         <Backdrop />
-        <Dust />
         <Portrait />
         <CameraRig />
       </Suspense>
