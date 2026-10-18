@@ -15,7 +15,7 @@ export function Captions() {
         {profile.availability && <p className="availability">{profile.availability}</p>}
       </div>
       <div className="scroll-hint">
-        Scroll to look inside <span aria-hidden="true">↓</span>
+        Scroll to read my mind <span aria-hidden="true">↓</span>
       </div>
       <div className="caption caption-mind">
         <p className="eyebrow">Inside my head</p>

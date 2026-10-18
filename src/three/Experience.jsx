@@ -8,7 +8,7 @@ import { damp } from '../lib/math.js'
 import { glowTexture } from '../lib/textures.js'
 import Portrait from './Portrait.jsx'
 import CameraRig from './CameraRig.jsx'
-import { GLOW, skullOpen } from './Mind.jsx'
+import { GLOW, magic } from './Mind.jsx'
 
 // Runs before everything else each frame: smooths scroll progress.
 function Director() {
@@ -30,11 +30,11 @@ function Lights() {
   )
 }
 
-// A soft indigo glow behind the portrait that warms up while the head is open. The canvas
+// A soft indigo glow behind the portrait that warms up while the magic is on. The canvas
 // itself is transparent, so the night sky (src/ui/Sky.jsx) shows around it.
 function Backdrop() {
   const warm = useRef()
-  useFrame(() => warm.current.color.copy(GLOW).multiplyScalar(0.22 * skullOpen(world.hero)))
+  useFrame(() => warm.current.color.copy(GLOW).multiplyScalar(0.22 * magic(world.hero)))
   return (
     <group position={[0, 1.5, -2.5]}>
       <mesh scale={[8, 8, 1]}>

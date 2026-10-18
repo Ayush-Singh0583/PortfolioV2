@@ -2,7 +2,7 @@
 
 A dark, scroll-driven portfolio.
 
-1. **Intro (3D):** a cutout of my Ghibli-style portrait. Its eyes follow the mouse and it blinks. On scroll, the top of the head swings open on a glowing brain, the face lights up (brows lift, a smile, a blush), and my traits float out as soap bubbles you can grab, fling and bump into each other. A living night sky (twinkling stars, a drifting nebula, the odd shooting star) runs behind the whole page.
+1. **Intro (3D):** a cutout of my Ghibli-style portrait. Its eyes follow the mouse and it blinks. On scroll, glittering dust spirals up from the top of my head, the face lights up (brows lift, a smile, a blush), and my traits appear out of my head as if by magic, as soap bubbles you can grab, fling and bump into each other. A living night sky (twinkling stars, a drifting nebula, the odd shooting star) runs behind the whole page.
 2. **About:** summary, education and skills, taken from my résumé.
 3. **Journey:** a timeline of my progress year by year, from day one of college to now. It combines milestones, every project on my GitHub, and résumé details for the featured ones.
 4. **Beyond the code:** leadership and certifications.
@@ -39,14 +39,14 @@ GitHub data is cached in `src/data/github.json`. Refresh it with `npm run sync` 
 
 ## The portrait
 
-`public/portrait/` holds two layers cut from the Ghibli picture: `body.webp` (everything below the head cut) and `lid.webp` (the top of the head). `src/data/portrait.json` records where things sit in the picture. To redo them from a different picture:
+`public/portrait/` holds two layers cut from the Ghibli picture: `body.webp` (everything below the forehead) and `lid.webp` (the top of the head). They sit together as one picture; the split is left over from when the head used to open. `src/data/portrait.json` records where things sit in the picture. To redo them from a different picture:
 
 ```bash
 pip install "rembg[cpu]" pillow numpy
 python scripts/make-portrait.py path/to/picture.png --cut 418
 ```
 
-`--cut` is the pixel row, from the top of the picture, where the head opens, just above the eyebrows. The script removes the background, cleans the hair edges, splits the layers and writes the metadata. A waist-up picture works best; the bottom 10% fades out.
+`--cut` is the pixel row, from the top of the picture, where the two layers meet, just above the eyebrows. The script removes the background, cleans the hair edges, splits the layers and writes the metadata. A waist-up picture works best; the bottom 10% fades out.
 
 `src/data/face.json` drives the face. It holds hand-measured eye shapes and iris positions, plus the brows, mouth, cheeks and colours, all in picture pixels. With a new picture, re-measure these, or the eyes will be painted in the wrong place.
 
@@ -55,8 +55,8 @@ python scripts/make-portrait.py path/to/picture.png --cut 418
 - `src/lib/store.js` turns scroll position into 0–1 progress for the intro, About and journey sections, and exposes it as CSS variables (`--hero`, `--about-in`, `--journey`, `--journey-in`).
 - `src/lib/journey.js` merges GitHub repos and milestones and groups them by academic year.
 - `src/three/Experience.jsx` holds the canvas, lights, dark backdrop and post-processing. Rendering stops once the portrait has scrolled away (after the About section on wide screens).
-- `src/three/Portrait.jsx` handles the cutout: the lid, the glowing opening and light beam, and the face rig. The face rig is a shader that repaints the eyes (iris follows the pointer, blinking) and adds the expression (brows lift, eyes widen, mouth corners lift, blush).
-- `src/three/Mind.jsx` holds the head-opening timing, glow and rising specks.
+- `src/three/Portrait.jsx` handles the cutout (both layers), publishes where the top of the head is on screen for the bubbles, and runs the face rig. The face rig is a shader that repaints the eyes (iris follows the pointer, blinking) and adds the expression (brows lift, eyes widen, mouth corners lift, blush).
+- `src/three/Mind.jsx` holds the magic timing (`magic(hero)`) and the glittering dust and halo that spiral up out of the head.
 - `src/ui/Bubbles.jsx` holds the trait bubbles: HTML over the canvas, using the shared physics (rise from the head, collisions, knocked aside by a quick sweep of the mouse but still when you approach slowly, drag and fling, pop).
 - `src/ui/Sky.jsx` draws the night sky behind everything on a 2D canvas; the 3D canvas is transparent so the sky shows around the portrait.
 - `src/three/frame.js` sets the widest the intro framing ever gets (the portrait can be bigger, never smaller). `src/three/CameraRig.jsx` sets the camera path: a close first view, easing out to that frame, then a pan so the portrait sits beside the About text.

@@ -260,7 +260,7 @@ main {
 }
 
 .caption-mind {
-  opacity: min(clamp(0, calc((var(--hero, 0) - 0.5) * 10), 1), clamp(0, calc((0.86 - var(--hero, 0)) * 12), 1));
+  opacity: min(clamp(0, calc((var(--hero, 0) - 0.4) * 10), 1), clamp(0, calc((0.86 - var(--hero, 0)) * 12), 1));
 }
 
 /* ---------- trait bubbles ---------- */
@@ -313,6 +313,31 @@ main {
   mix-blend-mode: screen;
   animation: sheen 9s linear infinite;
   pointer-events: none;
+}
+
+/* The shimmer as a bubble appears out of the head: a ring of light that blooms and fades. */
+.bubble.born::after {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--tint), 0.9);
+  box-shadow:
+    0 0 18px rgba(var(--tint), 0.8),
+    inset 0 0 18px rgba(var(--tint), 0.6);
+  pointer-events: none;
+  animation: born 0.8s ease-out forwards;
+}
+
+@keyframes born {
+  from {
+    opacity: 1;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.5);
+  }
 }
 
 .bubble span {

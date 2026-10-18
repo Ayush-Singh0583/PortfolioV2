@@ -9,8 +9,8 @@ import { introFrame } from './frame.js'
 const pose = (target, r, y) => ({ target, r, y })
 
 // Camera path through the intro, as keyframes on hero progress. It opens close in, the
-// portrait filling the screen, then eases back to the intro frame as the head opens.
-// The frame is as far out as the camera ever goes.
+// portrait filling the screen, then eases back to the intro frame to make room for the
+// bubbles. The frame is as far out as the camera ever goes.
 function heroKeys(f, head) {
   const aspect = f.halfW / f.halfH
   // Phones zoom in less: the screen is narrow, so a close-up crops the shoulders.
@@ -23,8 +23,7 @@ function heroKeys(f, head) {
   return [
     { at: 0, ...pose(closeTarget, close, 0.03) },
     { at: 0.12, ...pose(closeTarget, close, 0.03) },
-    { at: 0.42, ...pose(f.target, f.r, 0.22) },
-    { at: 0.88, ...pose(f.target, f.r, 0.22) },
+    { at: 0.34, ...pose(f.target, f.r, 0.05) },
     { at: 1, ...pose(f.target, f.r, 0.05) },
   ]
 }

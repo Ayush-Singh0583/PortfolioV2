@@ -7,7 +7,7 @@ import { bubbleTransform, stepBubbles } from '../lib/bubblePhysics.js'
 const TINTS = ['255, 177, 92', '255, 128, 160', '120, 190, 255', '186, 150, 255', '120, 225, 185']
 
 // When each bubble appears and pops, on hero scroll progress.
-const appearAt = (i, n) => 0.42 + (i / n) * 0.28
+const appearAt = (i, n) => 0.3 + (i / n) * 0.36
 const popAt = (i, n) => 0.86 + (i / n) * 0.06
 
 // Home positions: two loose arcs above the head (rows on tall screens). They don't need
@@ -37,7 +37,7 @@ function homes(bubbles, head, vw, vh) {
   })
 }
 
-// The traits as soap bubbles. They rise out of the open head, float around it, bump into
+// The traits as soap bubbles. They appear out of the top of the head, float around it, bump into
 // each other, shy away from the cursor, can be grabbed and flung, and pop when the intro ends.
 export default function Bubbles() {
   const layer = useRef()
@@ -88,21 +88,27 @@ export default function Bubbles() {
       laidOut = null
     }
 
+    // A bubble appears out of the top of the head as if by magic: from a speck, with a
+    // shimmer of light (the .born animation) and a jelly wobble, then floats up and out.
     const spawn = (b, head) => {
       b.state = 'alive'
       b.age = 0
-      b.s = 0.12
-      b.x = head.x + (Math.random() - 0.5) * 12
-      b.y = head.y - 8
-      b.vx = (Math.random() - 0.5) * 140
-      b.vy = -420 - Math.random() * 160
-      b.el.classList.add('shown')
+      b.s = 0.04
+      b.x = head.x + (Math.random() - 0.5) * 16
+      b.y = head.y
+      b.vx = (Math.random() - 0.5) * 220
+      b.vy = -260 - Math.random() * 140
+      b.wobble = 0
+      b.wobbleV = 4
+      b.el.classList.remove('born')
+      void b.el.offsetWidth // restart the animation if it played before
+      b.el.classList.add('shown', 'born')
     }
 
     const hide = (b) => {
       b.state = 'hidden'
       b.grip = null
-      b.el.classList.remove('shown', 'held')
+      b.el.classList.remove('shown', 'held', 'born')
     }
 
     const physics = (dt, head) => {
@@ -143,7 +149,7 @@ export default function Bubbles() {
       // don't spawn bubbles on the way. Once detected, it holds until the scroll catches up.
       const lag = Math.abs(scroll.hero - h)
       jumping = lag > 0.12 || (jumping && lag > 0.03)
-      const head = world.opening
+      const head = world.crown
       if (head && (!laidOut || laidOut.vw !== vw || Math.hypot(head.x - laidOut.x, head.y - laidOut.y) > 6)) {
         homes(bubbles, head, vw, vh)
         laidOut = { x: head.x, y: head.y, vw }
