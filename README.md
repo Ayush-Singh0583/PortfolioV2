@@ -6,11 +6,9 @@ A dark, scroll-driven portfolio.
 2. **About:** summary, education and skills, taken from my résumé.
 3. **Journey:** a timeline of my progress year by year, from day one of college to now. It combines milestones, every project on my GitHub, and résumé details for the featured ones.
 4. **Beyond the code:** leadership and certifications.
-5. **Contact:** availability, links and a résumé download (`public/Ayush_Singh_Resume.pdf`).
+5. **Contact:** availability and links (an optional résumé download is switched on with `profile.resume`).
 
 Built with Vite, React, React Three Fiber (Three.js) and Lenis for smooth scrolling.
-
-**Working on this project? Start with [`kb/README.md`](kb/README.md).** It's the project's knowledge base: current state, decisions, architecture and a log of every session.
 
 ## Run it
 
@@ -27,7 +25,7 @@ Almost everything personal lives in **`src/content.js`**:
 
 | What | Key |
 | --- | --- |
-| Name, tagline, availability, links, résumé file | `profile` |
+| Name, tagline, availability, links, optional résumé file | `profile` |
 | The words on the keycaps | `traits` |
 | Summary, education, skills, leadership & certifications | `about` |
 | Non-GitHub moments on the timeline | `journey.milestones` |

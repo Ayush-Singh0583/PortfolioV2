@@ -1,0 +1,27 @@
+# Dependencies (recreate with `npm install`)
+node_modules/
+
+# Build output (Vercel / GitHub Pages build it themselves with `npm run build`)
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local environment (e.g. a GITHUB_TOKEN for `npm run sync`)
+.env
+.env.*
+
+# Personal and working files: kept on this computer only, never pushed
+AYUSH_SINGH_RVITM_ISE.pdf
+public/Ayush_Singh_Resume.pdf
+kb/
+CLAUDE.md
+Pasted image.png
+expected size.png
+
+# Editor and OS clutter
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

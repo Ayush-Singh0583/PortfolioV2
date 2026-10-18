@@ -1,0 +1,17 @@
+{
+  "width": 842,
+  "height": 1869,
+  "headTop": 261,
+  "cut": 418,
+  "cutLeft": 265,
+  "cutRight": 561,
+  "centerX": 413,
+  "eyes": 485,
+  "lid": {
+    "x": 252,
+    "y": 255,
+    "w": 339,
+    "h": 163
+  },
+  "skin": "#f6b268"
+}

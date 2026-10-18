@@ -1,0 +1,67 @@
+{
+  "note": "Hand-measured from the portrait (image pixels). Drives eye movement, blinking and the expression.",
+  "tilt": 6,
+  "eyes": [
+    {
+      "c": [
+        360.0,
+        476.5
+      ],
+      "a": 21.5,
+      "b": 9.5,
+      "iris": [
+        360.3,
+        474.5
+      ],
+      "r": 12.0
+    },
+    {
+      "c": [
+        469.0,
+        486.0
+      ],
+      "a": 22.0,
+      "b": 8.8,
+      "iris": [
+        465.8,
+        483.5
+      ],
+      "r": 12.5
+    }
+  ],
+  "brows": [
+    [
+      345,
+      440
+    ],
+    [
+      468,
+      449
+    ]
+  ],
+  "mouthCorners": [
+    [
+      356,
+      565
+    ],
+    [
+      458,
+      575
+    ]
+  ],
+  "cheeks": [
+    [
+      332,
+      534
+    ],
+    [
+      492,
+      545
+    ]
+  ],
+  "colors": {
+    "sclera": "#bca58b",
+    "lid": "#ab6a47",
+    "lips": "#b25c41"
+  }
+}

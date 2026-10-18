@@ -1,0 +1,47 @@
+import { useEffect, useRef } from 'react'
+import Experience from './three/Experience.jsx'
+import Loader from './ui/Loader.jsx'
+import Timeline from './ui/Timeline.jsx'
+import { About, Highlights } from './ui/About.jsx'
+import { Captions, EndSection, TopBar } from './ui/Overlay.jsx'
+import { startScroll } from './lib/store.js'
+
+export default function App() {
+  const hero = useRef()
+  const about = useRef()
+  const journey = useRef()
+
+  useEffect(() => startScroll({ hero: hero.current, about: about.current, journey: journey.current }), [])
+
+  return (
+    <>
+      {/* Behind everything: the portrait, blurred, on the intro's blue glow. It shows
+          through as the 3D scene fades, so the page never cuts to black. */}
+      <div className="backdrop" aria-hidden="true">
+        <img src={`${import.meta.env.BASE_URL}portrait/blur.webp`} alt="" />
+      </div>
+      <div className="stage">
+        <Experience />
+      </div>
+      <Captions />
+      <TopBar />
+      <Loader />
+      <main id="top">
+        {/* An empty, tall section: scrolling through it drives the 3D intro. */}
+        <section ref={hero} className="hero" aria-label="Introduction" />
+        <section ref={about} id="about" className="about" aria-label="About">
+          <About />
+        </section>
+        <section ref={journey} id="journey" className="journey" aria-label="Journey">
+          <Timeline />
+        </section>
+        <section className="beyond" aria-label="Leadership and certifications">
+          <Highlights />
+        </section>
+        <section className="end" aria-label="Contact">
+          <EndSection />
+        </section>
+      </main>
+    </>
+  )
+}
