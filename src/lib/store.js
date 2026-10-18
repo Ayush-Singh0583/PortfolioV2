@@ -67,8 +67,42 @@ function progressOf(el) {
 
 let lenis = null
 
-// Smoothly scroll the page to y (px from the top).
-export const scrollToY = (y) => (lenis ? lenis.scrollTo(y) : window.scrollTo({ top: y, behavior: 'smooth' }))
+// Scroll the page to y (px from the top): smoothly, or at once with { immediate: true }
+// (used while dragging, so the page follows the pointer exactly).
+export const scrollToY = (y, { immediate = false } = {}) =>
+  lenis ? lenis.scrollTo(y, { immediate, force: true }) : window.scrollTo({ top: y, behavior: immediate ? 'instant' : 'smooth' })
+
+// A short eased scroll to y (the journey ring settling on a card, or turning to one). It gives
+// way at once to anything else that moves the page (a wheel, a finger, the keyboard, the
+// scrollbar), where a Lenis animation would keep pulling the page back to its target.
+let glide = 0
+let gliding = false
+export function glideTo(y) {
+  cancelAnimationFrame(glide)
+  const from = window.scrollY
+  const distance = Math.abs(y - from)
+  if (distance < 1 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    gliding = false
+    scrollToY(y, { immediate: true })
+    return
+  }
+  const ms = Math.min(900, 350 + distance * 0.12)
+  const start = performance.now()
+  let expected = from
+  gliding = true
+  const frame = (now) => {
+    if (Math.abs(window.scrollY - expected) > 2) return (gliding = false) // someone else scrolled
+    const t = Math.min(1, (now - start) / ms)
+    expected = from + (y - from) * (1 - (1 - t) ** 3) // ease-out
+    scrollToY(expected, { immediate: true })
+    if (t < 1) glide = requestAnimationFrame(frame)
+    else gliding = false
+  }
+  glide = requestAnimationFrame(frame)
+}
+
+// True while the page is still easing towards a target: a glide, a wheel turn or a link.
+export const isGliding = () => gliding || lenis?.isScrolling === 'smooth'
 
 const enteredOf = (el) => clamp(1 - el.getBoundingClientRect().top / stableH)
 

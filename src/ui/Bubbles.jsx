@@ -100,6 +100,8 @@ export default function Bubbles() {
       b.vy = -260 - Math.random() * 140
       b.wobble = 0
       b.wobbleV = 4
+      // Reduced motion: it simply appears in its place.
+      if (still) Object.assign(b, { x: b.hx, y: b.hy, vx: 0, vy: 0, s: 1, wobbleV: 0 })
       b.el.classList.remove('born')
       void b.el.offsetWidth // restart the animation if it played before
       b.el.classList.add('shown', 'born')
@@ -119,8 +121,10 @@ export default function Bubbles() {
       for (const b of bubbles) {
         if (b.state === 'popping') {
           b.age += dt
-          b.s += dt * 1.8
+          if (!still) b.s += dt * 1.8
           if (b.age > 0.22) hide(b)
+        } else if (b.state === 'sinking' && still) {
+          hide(b)
         } else if (b.state === 'sinking' && head) {
           // Scrolled back up: drift back into the head.
           b.x += (head.x - b.x) * Math.min(1, dt * 8)

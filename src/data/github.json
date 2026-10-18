@@ -1,9 +1,57 @@
 {
-  "user": "Ayush-Singh0583",
-  "joined": "2025-08-13T17:53:37Z",
-  "fetchedAt": "2026-10-18T10:53:18.384Z",
+  "accounts": [
+    "Ayush-Singh0583",
+    "AyushDevJourney"
+  ],
+  "fetchedAt": "2026-10-18T22:13:18.319Z",
   "repos": [
     {
+      "owner": "AyushDevJourney",
+      "name": "Algorithm_Vizualizer",
+      "description": null,
+      "url": "https://github.com/AyushDevJourney/Algorithm_Vizualizer",
+      "homepage": null,
+      "language": "Python",
+      "languages": {
+        "Python": 15994
+      },
+      "topics": [],
+      "stars": 0,
+      "created_at": "2025-04-04T09:23:10Z",
+      "pushed_at": "2025-04-04T09:25:34Z"
+    },
+    {
+      "owner": "AyushDevJourney",
+      "name": "Rescue-Path-optimizer",
+      "description": null,
+      "url": "https://github.com/AyushDevJourney/Rescue-Path-optimizer",
+      "homepage": null,
+      "language": "C",
+      "languages": {
+        "C": 5821
+      },
+      "topics": [],
+      "stars": 0,
+      "created_at": "2025-04-28T16:58:29Z",
+      "pushed_at": "2025-04-28T16:59:12Z"
+    },
+    {
+      "owner": "AyushDevJourney",
+      "name": "VoIP-Using-Jawa-And-Swing",
+      "description": "Real-time audio communication link using UDP and u-Law encoding.",
+      "url": "https://github.com/AyushDevJourney/VoIP-Using-Jawa-And-Swing",
+      "homepage": null,
+      "language": "Java",
+      "languages": {
+        "Java": 21808
+      },
+      "topics": [],
+      "stars": 0,
+      "created_at": "2025-10-30T19:27:22Z",
+      "pushed_at": "2025-10-30T19:34:27Z"
+    },
+    {
+      "owner": "Ayush-Singh0583",
       "name": "smart-todo-pro",
       "description": null,
       "url": "https://github.com/Ayush-Singh0583/smart-todo-pro",
@@ -20,6 +68,7 @@
       "pushed_at": "2026-02-27T19:26:12Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "Habit-tracker",
       "description": null,
       "url": "https://github.com/Ayush-Singh0583/Habit-tracker",
@@ -36,6 +85,7 @@
       "pushed_at": "2026-03-01T10:01:05Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "Focus",
       "description": "A full-stack productivity app with task management, time tracking, and analytics, built using React, Node.js, and MongoDB.",
       "url": "https://github.com/Ayush-Singh0583/Focus",
@@ -52,22 +102,7 @@
       "pushed_at": "2026-04-01T17:41:25Z"
     },
     {
-      "name": "campus",
-      "description": "nothing",
-      "url": "https://github.com/Ayush-Singh0583/campus",
-      "homepage": "https://campus-two-rho.vercel.app",
-      "language": "JavaScript",
-      "languages": {
-        "JavaScript": 51772,
-        "CSS": 23964,
-        "HTML": 899
-      },
-      "topics": [],
-      "stars": 0,
-      "created_at": "2026-04-07T08:05:00Z",
-      "pushed_at": "2026-04-07T09:56:48Z"
-    },
-    {
+      "owner": "Ayush-Singh0583",
       "name": "ML_GESTURE",
       "description": " Real-time hand gesture system to control your computer using a webcam. Built with Python, OpenCV, and MediaPipe, it enables cursor movement, clicks, scrolling, and more with high accuracy, low latency, and smooth interaction using ML and Kalman filtering.",
       "url": "https://github.com/Ayush-Singh0583/ML_GESTURE",
@@ -82,22 +117,24 @@
       "pushed_at": "2026-05-03T18:01:25Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "FSD_PROJECT",
       "description": "A Event Management Web Based App",
       "url": "https://github.com/Ayush-Singh0583/FSD_PROJECT",
       "homepage": null,
       "language": "JavaScript",
       "languages": {
-        "JavaScript": 159395,
-        "CSS": 31372,
-        "HTML": 946
+        "JavaScript": 184782,
+        "CSS": 54341,
+        "HTML": 863
       },
       "topics": [],
       "stars": 0,
       "created_at": "2026-04-17T20:28:43Z",
-      "pushed_at": "2026-04-17T20:30:54Z"
+      "pushed_at": "2026-10-18T19:09:32Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "Workout_Tracker",
       "description": "Just A Simple Way TO keep In Mind The Workout",
       "url": "https://github.com/Ayush-Singh0583/Workout_Tracker",
@@ -114,6 +151,7 @@
       "pushed_at": "2026-04-24T17:35:27Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "ML-Network-Intrusion-Detection-System",
       "description": "An end-to-end Machine Learning-powered Network Intrusion Detection System that analyzes network traffic, detects cyber threats, and provides real-time monitoring through an interactive dashboard.",
       "url": "https://github.com/Ayush-Singh0583/ML-Network-Intrusion-Detection-System",
@@ -132,6 +170,7 @@
       "pushed_at": "2026-10-04T21:03:10Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "Interview-Speaking-Trainer",
       "description": "Interview Speaking Trainer is a full-stack MVP that helps you improve communication skills by practicing on random HR, technical, behavioral, and discussion topics. Generate a prompt, prepare for 60 seconds, record your answer in the browser, and review past sessions — all stored locally with FastAPI, SQLite, and React.",
       "url": "https://github.com/Ayush-Singh0583/Interview-Speaking-Trainer",
@@ -149,6 +188,7 @@
       "pushed_at": "2026-08-03T16:43:42Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "CODEBASE",
       "description": "CODEBASE is a developer workspace for building, organizing, and evolving programming knowledge. Store problems, version solutions like Git commits, attach notes and references, analyze progress, and build a permanent programming knowledge base powered by a TypeScript backend, React frontend, PostgreSQL, and a high-performance C++ core.",
       "url": "https://github.com/Ayush-Singh0583/CODEBASE",
@@ -168,6 +208,7 @@
       "pushed_at": "2026-08-05T10:31:51Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "Portfolio",
       "description": "Basic Portfolio Website ",
       "url": "https://github.com/Ayush-Singh0583/Portfolio",
@@ -183,6 +224,7 @@
       "pushed_at": "2026-10-17T19:06:16Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "CPU-Cache-Simulator",
       "description": "A configurable L1/L2 CPU Cache Simulator built in C++17 that models direct-mapped, set-associative, and fully associative caches with LRU replacement, write policies, and memory trace analysis.",
       "url": "https://github.com/Ayush-Singh0583/CPU-Cache-Simulator",
@@ -195,20 +237,7 @@
       "pushed_at": "2026-08-20T10:38:18Z"
     },
     {
-      "name": "Ayush-Singh0583",
-      "description": "Hey ,Its my Profile",
-      "url": "https://github.com/Ayush-Singh0583/Ayush-Singh0583",
-      "homepage": null,
-      "language": "Python",
-      "languages": {
-        "Python": 14012
-      },
-      "topics": [],
-      "stars": 0,
-      "created_at": "2026-08-20T11:38:58Z",
-      "pushed_at": "2026-10-18T06:04:25Z"
-    },
-    {
+      "owner": "Ayush-Singh0583",
       "name": "CacheSimulatorV2-c-17-",
       "description": "Full-stack CPU cache simulator with an accurate C++17 simulation engine, interactive React visualizations, trace-driven execution, and multi-level cache analysis.",
       "url": "https://github.com/Ayush-Singh0583/CacheSimulatorV2-c-17-",
@@ -228,6 +257,7 @@
       "pushed_at": "2026-09-06T14:37:19Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "Evoting-System",
       "description": "A remote -decentralized and Loction Independent Way for E--voting",
       "url": "https://github.com/Ayush-Singh0583/Evoting-System",
@@ -247,6 +277,7 @@
       "pushed_at": "2026-10-03T11:18:03Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "NTM",
       "description": "The NTM Project",
       "url": "https://github.com/Ayush-Singh0583/NTM",
@@ -262,6 +293,7 @@
       "pushed_at": "2026-10-10T19:39:36Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "Unload",
       "description": "Dump everything on your mind in one messy message. Unload sorts it into tonight, this week, later and can’t fix right now, then picks one small next step. Python + Gemini structured output, built step by step with Claude as a guide.",
       "url": "https://github.com/Ayush-Singh0583/Unload",
@@ -276,21 +308,35 @@
       "pushed_at": "2026-10-17T17:40:34Z"
     },
     {
+      "owner": "Ayush-Singh0583",
       "name": "PortfolioV2",
       "description": "My Portfolio Version 2 ",
       "url": "https://github.com/Ayush-Singh0583/PortfolioV2",
-      "homepage": null,
+      "homepage": "https://portfolio-v2-sigma-amber.vercel.app",
       "language": "JavaScript",
       "languages": {
-        "JavaScript": 92073,
-        "CSS": 28018,
-        "Python": 4667,
+        "JavaScript": 101542,
+        "CSS": 32013,
+        "Python": 4677,
         "HTML": 569
       },
       "topics": [],
       "stars": 0,
       "created_at": "2026-10-18T09:19:56Z",
-      "pushed_at": "2026-10-18T10:07:36Z"
+      "pushed_at": "2026-10-18T17:48:03Z"
+    },
+    {
+      "owner": "Ayush-Singh0583",
+      "name": "AcadsphereV2",
+      "description": "A Event management Tool",
+      "url": "https://github.com/Ayush-Singh0583/AcadsphereV2",
+      "homepage": null,
+      "language": null,
+      "languages": {},
+      "topics": [],
+      "stars": 0,
+      "created_at": "2026-10-18T19:18:46Z",
+      "pushed_at": "2026-10-18T19:19:03Z"
     }
   ]
 }

@@ -4,9 +4,9 @@ A dark, scroll-driven portfolio.
 
 1. **Intro (3D):** a cutout of my Ghibli-style portrait. Its eyes follow the mouse and it blinks. On scroll, glittering dust spirals up from the top of my head, the face lights up (brows lift, a smile, a blush), and my traits appear out of my head as if by magic, as soap bubbles you can grab, fling and bump into each other. A living night sky (twinkling stars, a drifting nebula, the odd shooting star) runs behind the whole page.
 2. **About:** summary, education and skills, taken from my résumé.
-3. **Journey:** a timeline of my progress year by year, from day one of college to now. It combines milestones, every project on my GitHub, and résumé details for the featured ones.
+3. **Journey:** a timeline of my progress year by year, from day one of college to now. Each year's projects sit on a 3D ring, oldest to newest, that turns as you scroll; the front card zooms in, and the ring sinks back (zooms out) while it turns. You can also turn it either way by dragging or flicking, a sideways scroll, the ‹ › buttons, the arrow keys, clicking a card, or the round dial beside the year (hovering a dot or arrow shows where it leads), and it wraps from the last card to the first. The ring always comes to rest on a card. It combines milestones, every project on both my GitHub accounts, and résumé details for the featured ones.
 4. **Beyond the code:** leadership and certifications.
-5. **Contact:** "Let's work together", a contact form, and a panel of thought bubbles beside it: conversation starters to click, the visitor's words floating up as they type, and a pop when they send. Plus links. The form opens the visitor's email app by default; set `contact.endpoint` (Formspree or Web3Forms) to receive messages directly. An optional résumé download is switched on with `profile.resume` (everything in `public/` is published, so only put a version without personal details there).
+5. **Contact:** "Let's work together", a contact form, and a panel of thought bubbles beside it: conversation starters to click, the visitor's words floating up as they type, and a pop when they send. Plus links. Each field checks itself when you leave it and says how to fix it, and a half-written message survives a reload. The form opens the visitor's email app by default; set `contact.endpoint` (Formspree or Web3Forms) to receive messages directly. An optional résumé download is switched on with `profile.resume` (everything in `public/` is published, so only put a version without personal details there).
 
 Built with Vite, React, React Three Fiber (Three.js) and Lenis for smooth scrolling.
 
@@ -26,16 +26,21 @@ Almost everything personal lives in **`src/content.js`**:
 | What | Key |
 | --- | --- |
 | Name, tagline, availability, links, optional résumé file | `profile` |
+| The live address, for link previews on LinkedIn, WhatsApp, X… | `profile.site` |
 | Contact email, form endpoint, conversation-starter topics | `contact` |
 | The words in the bubbles | `traits` |
 | Summary, education, skills, leadership & certifications | `about` |
+| GitHub accounts to pull repos from | `journey.githubAccounts` |
+| Journey look: `ring` (default), `stack` or `list` | `journey.layout` |
 | Non-GitHub moments on the timeline | `journey.milestones` |
 | Work that isn't a public repo (e.g. the banking API) | `journey.extraProjects` |
-| Repos to hide; titles, descriptions, stacks, highlights, featured | `journey.hideRepos`, `journey.repoOverrides` |
+| Repos to hide; titles, descriptions, stacks, highlights, featured, a corrected `date` and `label` | `journey.hideRepos`, `journey.repoOverrides` |
 | When 1st year started | `journey.collegeStart` |
 | The portrait layers | `portrait` |
 
-GitHub data is cached in `src/data/github.json`. Refresh it with `npm run sync` (this also runs automatically on every build). If you hit GitHub's anonymous rate limit, set a `GITHUB_TOKEN` environment variable.
+Link previews use `public/og.jpg` (1200×630, a shot of the intro) and the page's title and description; `vite.config.js` adds the tags at build time from `profile.site`.
+
+GitHub data from every account in `journey.githubAccounts` (forks skipped) is cached in `src/data/github.json`. Refresh it with `npm run sync` (this also runs automatically on every build). If you hit GitHub's anonymous rate limit, set a `GITHUB_TOKEN` environment variable.
 
 ## The portrait
 
@@ -61,7 +66,13 @@ python scripts/make-portrait.py path/to/picture.png --cut 418
 - `src/ui/Sky.jsx` draws the night sky behind everything on a 2D canvas; the 3D canvas is transparent so the sky shows around the portrait.
 - `src/three/frame.js` sets the widest the intro framing ever gets (the portrait can be bigger, never smaller). `src/three/CameraRig.jsx` sets the camera path: a close first view, easing out to that frame, then a pan so the portrait sits beside the About text.
 - `src/ui/Contact.jsx` holds the contact section: the form (mailto fallback, optional endpoint, honeypot) and the thought-bubble panel. `src/lib/bubblePhysics.js` is the bubble physics shared with the intro.
-- `src/ui/About.jsx` contains the About and "Beyond the code" sections. `src/ui/Timeline.jsx` is the journey section. Each year pins in place while its project cards slide in and stack up like a deck, beside the year's title and list of projects, on alternating sides of a meandering line. Every card in a deck is as tall as the tallest one (measured from its content), so nothing is cut off; on screens too short for that, only the card's middle scrolls. The line behaves like a string: it ripples when you scroll or sweep the mouse across it, and fills down to a glowing tip. Set `journey.layout: 'list'` in `content.js` for a plain scrolling column instead. `src/ui/Overlay.jsx` has the intro captions and the top bar.
+- `src/ui/About.jsx` contains the About and "Beyond the code" sections. `src/ui/Timeline.jsx` is the journey section. By default (`journey.layout: 'ring'`) each year pins in place and its cards stand on a 3D ring (CSS 3D transforms), oldest first. Scrolling turns the ring one card at a time; the front card zooms in, and the ring sinks back while turning. Dragging or flicking, a sideways scroll, the arrow buttons and keys, clicking a card and the round dial (a dot per entry, a fill to a glowing tip; drag it round or click a dot) turn it too, in either direction, wrapping round from the last card to the first. A short swipe goes on to the next card instead of springing back, and if the page stops scrolling part-way through a turn it glides on to a card. With `'stack'`, each year's cards instead slide in and stack up like a deck, beside the year's title and list of projects, on alternating sides of a meandering line. Every card in a deck is as tall as the tallest one (measured from its content), so nothing is cut off; on screens too short for that, only the card's middle scrolls. The line behaves like a string: it ripples when you scroll or sweep the mouse across it, and fills down to a glowing tip. Set `journey.layout: 'list'` in `content.js` for a plain scrolling column instead. `src/ui/Overlay.jsx` has the intro captions and the top bar.
+
+## Keyboard, touch and motion
+
+- Everything works from the keyboard, with a visible amber focus ring. On the journey, each year's dial is one Tab stop: ← → turn the ring (also whenever a year fills the screen), and Home / End on the dial jump to the first and last card. Only the card in front can be tabbed into.
+- Small buttons and links have a tap area of at least 44px on phones.
+- With "reduce motion" switched on in the system settings, nothing moves with the scroll or drifts on its own: the ring turns without zooming, the bubbles appear in place, the sky stays still and sections just fade in.
 
 The build uses relative paths (`base: './'`), so the `dist/` folder works on Vercel, Netlify or GitHub Pages without changes.
 # PortfolioV2

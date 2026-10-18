@@ -2,9 +2,12 @@
 
 export const profile = {
   name: 'Ayush Singh',
-  tagline: 'I build products end to end, with an ML streak.',
+  // \u00a0 keeps words together when the line wraps on narrow screens.
+  tagline: 'I build products end\u00a0to\u00a0end, with an ML\u00a0streak.',
   role: 'Information Science & Engineering · RVITM, Bengaluru',
   availability: 'Open to a 6-month internship · Jan–Jun 2027',
+  // The live address. Link previews (LinkedIn, WhatsApp, X…) are built from it at build time.
+  site: 'https://portfolio-v2-sigma-amber.vercel.app',
   // A résumé PDF to offer as a download: put it in /public and name it here, e.g.
   // 'Ayush_Singh_Resume.pdf'. Off for now, because the current one has your phone number
   // and USN. Everything in /public is published, so only use a version without them.
@@ -98,26 +101,23 @@ export const about = {
 }
 
 export const journey = {
-  // 'stack': each year pins in place while its cards slide in and stack up.
+  // 'ring': each year pins in place while its cards turn on a 3D ring, oldest first, the front
+  //         one zoomed in; a circular dial shows where you are (scroll, drag, click or use ← →).
+  // 'stack': each year pins in place while its cards slide in and stack up like a deck.
   // 'list': each year's cards scroll past in a column.
-  layout: 'stack',
+  layout: 'ring',
+  // GitHub accounts whose public repos appear on the timeline (fetched at build time).
+  githubAccounts: ['Ayush-Singh0583', 'AyushDevJourney'],
   // First day of 1st year. Academic years are counted from this date.
   collegeStart: '2023-08-01',
   // Things that happened outside GitHub. `label` replaces the shown date when the exact month isn't known.
   milestones: [
     { date: '2023-08-01', label: '2023', title: 'Started B.E. in Information Science & Engineering', text: 'RV Institute of Technology and Management, Bengaluru. CGPA so far: 8.74 / 10.' },
-    { date: '2025-08-13', title: 'Joined GitHub', text: 'Opened the account that holds every project that follows.' },
+    { date: '2024-08-17', title: 'First GitHub repository', text: '“Lets Start The First Thing”: the first repo on my first account, AyushDevJourney.' },
+    { date: '2025-08-13', title: 'Started my main GitHub account', text: 'Opened Ayush-Singh0583, home to most of the projects that follow.' },
   ],
-  // Work that isn't a repo on this GitHub account. Add `url` when there's a link.
+  // Work that isn't a public repo. Add `url` when there's a link.
   extraProjects: [
-    {
-      // Exact month unknown; dated mid-year so it sorts into Year 2. Lives on Ayush's other GitHub account.
-      date: '2025-01-15',
-      label: '2024–25',
-      title: 'VoIP Calling App',
-      description: 'A voice-over-IP calling app in Java, with a Swing desktop interface.',
-      stack: ['Java', 'Swing'],
-    },
     {
       date: '2026-10-16',
       label: 'Ongoing',
@@ -132,13 +132,65 @@ export const journey = {
       ],
     },
   ],
-  // Repos to leave off the timeline.
-  hideRepos: ['Ayush-Singh0583', 'campus'],
+  // Repos to leave off the timeline (profile pages, empty repos).
+  hideRepos: ['Ayush-Singh0583', 'campus', 'AyushDevJourney', 'Start'],
   // Nicer titles, descriptions, tech stacks and highlights for specific repos (keyed by repo name).
-  // `featured` projects get a highlighted card.
+  // `featured` projects get a highlighted card. `date` / `label` override GitHub's creation
+  // date, for projects uploaded long after they were built.
   repoOverrides: {
+    'VoIP-Using-Jawa-And-Swing': {
+      // GitHub says Oct 2025, but Ayush built it in 2nd year; exact month unknown.
+      date: '2025-01-15',
+      label: '2024–25',
+      title: 'VoIP Audio Comm-Link',
+      description: 'Real-time audio streaming in Java: captures the microphone, compresses it with µ-law (G.711) and streams it over UDP, with neon-themed Swing sender and receiver apps.',
+      stack: ['Java', 'Swing', 'UDP', 'µ-law (G.711)', 'Networking'],
+    },
+    Algorithm_Vizualizer: {
+      title: 'Pathfinding Visualizer',
+      description: 'A Pygame visualiser on a 16×16 grid: watch A*, BFS, DFS, Dijkstra and bidirectional search find their way around walls you draw or randomise.',
+      stack: ['Python', 'Pygame', 'A*', 'BFS / DFS', 'Dijkstra'],
+    },
+    'Rescue-Path-optimizer': {
+      title: 'Rescue Path Optimizer',
+      description: 'Finds the safest way out of a building: runs Dijkstra’s algorithm from your position to several exits over a danger-weighted graph, and re-routes when a wall collapses and a path disappears.',
+      stack: ['C', 'Graphs', 'Dijkstra', 'Linked lists'],
+    },
+    AcadsphereV2: {
+      title: 'AcadSphere: Academic Event Management',
+      description: 'A full-stack MERN platform for hackathons, fests, workshops and conferences: events and sessions, teams, submissions and judging, attendance, feedback and announcements, with role-based JWT auth and dashboards.',
+      stack: ['React', 'Vite', 'Node.js', 'Express.js', 'MongoDB', 'JWT', 'Recharts'],
+    },
     ML_GESTURE: { title: 'ML Gesture Control' },
-    FSD_PROJECT: { title: 'Event Management App' },
+    // Descriptions below are written from each repo's README.
+    'smart-todo-pro': {
+      title: 'Smart To-Do Pro',
+      description: 'A task manager rebuilt in React: categories, priorities and due dates with live countdowns, inline editing, search (Ctrl + K), filters, and light and dark themes, all saved in the browser.',
+      stack: ['React', 'Vite', 'CSS', 'LocalStorage'],
+    },
+    'Habit-tracker': {
+      title: 'Habitual: Habit Tracker',
+      description: 'A full-stack MERN habit tracker with streaks, analytics charts and a heatmap, and JWT sign-in with access and refresh tokens.',
+      stack: ['React', 'Tailwind CSS', 'Chart.js', 'Node.js', 'Express.js', 'MongoDB', 'JWT'],
+    },
+    FSD_PROJECT: {
+      title: 'EventSphere: Event Management',
+      description: 'A MERN app for formal academic events: planning and schedules, participants and teams, hackathon submissions and judging, attendance, volunteers, feedback and reports.',
+      stack: ['React', 'Vite', 'Node.js', 'Express.js', 'MongoDB', 'JWT'],
+    },
+    Workout_Tracker: { description: 'A simple way to keep track of your workouts.' },
+    'Interview-Speaking-Trainer': {
+      description: 'A full-stack MVP for practising communication: pick a random HR, technical, behavioural or discussion topic, prepare for 60 seconds, record your answer in the browser and review past sessions, all stored locally with FastAPI, SQLite and React.',
+    },
+    CODEBASE: {
+      description: 'A developer workspace for programming knowledge: store problems, version solutions like Git commits, attach notes and references, and track your progress. A TypeScript backend, React front end and PostgreSQL, with a high-performance C++ core.',
+    },
+    NTM: {
+      title: 'Do EDM Tool-Wear Models Transfer?',
+      status: 'Research',
+      description: 'Co-authored research: do machine-learning models of tool wear in die-sinking EDM work in a new lab? Across 156 runs from 10 published studies, none transfers reliably to a study it hasn’t seen.',
+      stack: ['Python', 'XGBoost', 'Random forests', 'Ridge regression'],
+    },
     'ML-Network-Intrusion-Detection-System': {
       title: 'Real-Time ML Network Intrusion Detection System',
       featured: true,
@@ -172,11 +224,15 @@ export const journey = {
       ],
     },
     'CPU-Cache-Simulator': { title: 'CPU Cache Simulator (first version)' },
-    Portfolio: { title: 'Portfolio V1' },
+    Portfolio: {
+      title: 'Portfolio V1',
+      description: 'My first portfolio: a single-page, scroll-driven site whose hero is a live network-traffic animation drawn on a canvas, with GSAP scroll effects and three project case studies.',
+      stack: ['HTML', 'CSS', 'JavaScript', 'GSAP', 'Lenis', 'Canvas'],
+    },
     PortfolioV2: {
       title: 'Portfolio V2 (this site)',
-      description: 'The site you are on: a 3D intro where my head opens and my traits float out as bubbles, then my journey year by year. Built with React, Three.js and plenty of overthinking.',
+      description: 'The site you are on: a 3D intro where my traits appear out of my head as bubbles, then my journey year by year. Built with React, Three.js and plenty of overthinking.',
     },
-    'Evoting-System': { title: 'E-Voting System', description: 'A remote, decentralised and location-independent way to vote.' },
+    'Evoting-System': { title: 'Blockchain E-Voting System', description: 'A blockchain-based e-voting system: a remote, decentralised and location-independent way to vote.' },
   },
 }

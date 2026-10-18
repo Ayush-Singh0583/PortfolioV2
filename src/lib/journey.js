@@ -56,7 +56,8 @@ const projects = github.repos
     const languages = topLanguages(r.languages)
     return {
       kind: 'project',
-      date: r.created_at,
+      date: o.date ?? r.created_at,
+      label: o.label,
       title: o.title ?? prettify(r.name),
       description: o.description ?? (r.description?.trim() || `A ${languages[0]?.name ?? 'side'} project.`),
       languages,
@@ -64,6 +65,7 @@ const projects = github.repos
       homepage: r.homepage,
       updated: r.pushed_at,
       featured: o.featured ?? false,
+      status: o.status,
       stack: o.stack,
       highlights: o.highlights,
     }

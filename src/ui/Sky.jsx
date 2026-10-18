@@ -86,8 +86,8 @@ export default function Sky() {
       ctx.drawImage(nebula, Math.sin(drift / 47) * 40 - 40, Math.cos(drift / 59) * 30 - 30, w + 80, h + 60)
       ctx.globalAlpha = 1
 
-      // Stars: nearer ones move more with the mouse and the scroll.
-      const scrollY = window.scrollY
+      // Stars: nearer ones move more with the mouse and the scroll (not with reduced motion).
+      const scrollY = still ? 0 : window.scrollY
       for (const s of stars) {
         const x = (((s.x * w + pointer.sx * s.depth * 18) % w) + w) % w
         const y = (((s.y * h + pointer.sy * s.depth * 12 - scrollY * s.depth * 0.04) % h) + h) % h
@@ -156,7 +156,7 @@ export default function Sky() {
       pointer.x = (e.clientX / w) * 2 - 1
       pointer.y = (e.clientY / h) * 2 - 1
     }
-    // With reduced motion the sky is drawn still, and only redrawn when the page scrolls.
+    // With reduced motion the sky is drawn once and stays still (redrawn only on resize).
     const redraw = () => draw(0)
     const onResize = () => {
       if (canvas.clientWidth === w && canvas.clientHeight === h) return
@@ -167,7 +167,6 @@ export default function Sky() {
     build()
     if (still) {
       redraw()
-      window.addEventListener('scroll', redraw, { passive: true })
     } else {
       raf = requestAnimationFrame(frame)
       window.addEventListener('pointermove', onMove, { passive: true })
@@ -175,7 +174,6 @@ export default function Sky() {
     window.addEventListener('resize', onResize)
     return () => {
       cancelAnimationFrame(raf)
-      window.removeEventListener('scroll', redraw)
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('resize', onResize)
     }

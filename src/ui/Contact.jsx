@@ -7,6 +7,8 @@ const TINTS = ['255, 177, 92', '255, 128, 160', '120, 190, 255', '186, 150, 255'
 const MAX_WORDS = 12 // older word bubbles pop to make room
 const SKIP = new Set('the and you your for with that this are was but have about just from would like can will its not our out all any has had how who what when where why'.split(' '))
 
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
 const topicItems = () => contact.topics.map((topic, i) => ({ id: `topic-${i}-${Date.now()}`, text: topic.label, kind: 'topic', topic }))
 
 // The thoughts beside the form: conversation starters to click, the visitor's words
@@ -43,7 +45,7 @@ function Thoughts({ api, onTopic }) {
   // Topics start in a ring; words (and the greeting) rise from the bottom.
   const setUp = (b, w, h) => {
     const { item } = b
-    const r = item.kind === 'topic' ? 34 + 6 * Math.sqrt(item.text.length) : item.kind === 'name' ? 40 : 22 + 4.5 * Math.sqrt(item.text.length)
+    const r = item.kind === 'topic' ? 38 + 6.5 * Math.sqrt(item.text.length) : item.kind === 'name' ? 40 : 22 + 4.5 * Math.sqrt(item.text.length)
     b.el.style.width = b.el.style.height = `${r * 2}px`
     const word = item.kind !== 'topic'
     const angle = word ? 0 : (contact.topics.indexOf(item.topic) / contact.topics.length) * Math.PI * 2 - Math.PI / 2
@@ -67,6 +69,8 @@ function Thoughts({ api, onTopic }) {
       popping: false,
       popAge: 0,
     })
+    // Reduced motion: it simply appears in its place.
+    if (reducedMotion()) Object.assign(b, { x: hx, y: hy, vx: 0, vy: 0, s: 1 })
   }
 
   useEffect(() => {
@@ -95,7 +99,7 @@ function Thoughts({ api, onTopic }) {
       for (const b of all) {
         if (b.popping) {
           b.popAge += dt
-          b.s += dt * 1.8
+          if (!still) b.s += dt * 1.8
           b.el.style.opacity = Math.max(0, 1 - b.popAge / 0.22)
           if (b.popAge > 0.22) popped.push(b.id)
         }
@@ -165,19 +169,87 @@ function Thoughts({ api, onTopic }) {
   )
 }
 
-function ContactForm({ messageRef, onMessage, onName, onSent }) {
+// What each field needs, in words that say how to fix it.
+const RULES = {
+  name: (v) => (v.trim() ? '' : 'Add your name, so I know who’s writing.'),
+  email: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? '' : 'Enter an email address like name@example.com.'),
+  message: (v) => (v.trim() ? '' : 'Write a line or two about what you have in mind.'),
+}
+const DRAFT = 'contact-draft' // localStorage key: a half-written message survives a reload
+
+const loadDraft = () => {
+  try {
+    return JSON.parse(localStorage.getItem(DRAFT)) ?? {}
+  } catch {
+    return {}
+  }
+}
+const saveDraft = (draft) => {
+  try {
+    if (draft) localStorage.setItem(DRAFT, JSON.stringify(draft))
+    else localStorage.removeItem(DRAFT)
+  } catch {
+    // private browsing or storage switched off: nothing to keep
+  }
+}
+
+// A field checks itself when you leave it, and its message clears as soon as you start fixing it.
+function Field({ name, label, wide, error, onBlur, onInput, children }) {
+  const id = `contact-${name}`
+  return (
+    <div className={`field${wide ? ' wide' : ''}${error ? ' invalid' : ''}`}>
+      <label htmlFor={id}>{label}</label>
+      {children({ id, name, onBlur, onInput, 'aria-invalid': error ? true : undefined, 'aria-describedby': error ? `${id}-error` : undefined })}
+      {error && (
+        <p className="field-error" id={`${id}-error`}>
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function ContactForm({ messageRef, onMessage, onName, onSent, onRestore }) {
   const form = useRef()
   const [status, setStatus] = useState('idle') // idle | sending | sent | error | mailto
+  const [errors, setErrors] = useState({})
+
+  // Bring back a draft from an earlier visit (once, on load).
+  useEffect(() => {
+    const draft = loadDraft()
+    for (const key of ['name', 'email', 'message']) if (draft[key]) form.current.elements[key].value = draft[key]
+    if (draft.message) onRestore(draft.message)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const values = () => Object.fromEntries(new FormData(form.current))
+  const check = (e) => {
+    const message = RULES[e.target.name]?.(e.target.value)
+    setErrors((all) => ({ ...all, [e.target.name]: message }))
+  }
+  const clear = (e) => errors[e.target.name] && setErrors((all) => ({ ...all, [e.target.name]: '' }))
+  const keep = () => {
+    const { name, email, message } = values()
+    saveDraft(name || email || message ? { name, email, message } : null)
+  }
 
   const submit = async (e) => {
     e.preventDefault()
-    const data = Object.fromEntries(new FormData(form.current))
+    if (status === 'sending') return
+    const data = values()
     if (data.company) return // a bot filled the hidden field
+    const found = Object.fromEntries(Object.entries(RULES).map(([key, rule]) => [key, rule(data[key] ?? '')]))
+    setErrors(found)
+    const first = Object.keys(RULES).find((key) => found[key])
+    if (first) {
+      form.current.elements[first].focus()
+      return
+    }
     if (!contact.endpoint) {
       const subject = `Portfolio: message from ${data.name}`
       const body = `${data.message}\n\n— ${data.name} (${data.email})`
       window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
       setStatus('mailto')
+      saveDraft(null)
       onSent()
       return
     }
@@ -190,6 +262,7 @@ function ContactForm({ messageRef, onMessage, onName, onSent }) {
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       form.current.reset()
+      saveDraft(null)
       setStatus('sent')
       onSent()
     } catch {
@@ -201,38 +274,28 @@ function ContactForm({ messageRef, onMessage, onName, onSent }) {
   const notes = {
     sending: 'Sending…',
     sent: "Thanks! Your message is on its way. I'll get back to you soon.",
-    error: <>That didn't go through. Please email me directly at {mail}.</>,
+    error: <>That didn't send, but your message is still here. Try again, or email me at {mail}.</>,
     mailto: <>Your email app should open with the message ready to send. If it doesn't, email me at {mail}.</>,
   }
 
   return (
-    <form className="contact-card" ref={form} onSubmit={submit}>
+    <form className="contact-card" ref={form} onSubmit={submit} onInput={keep} noValidate>
       <h3>Contact form</h3>
       <p className="contact-note">Email me directly at {mail}, or drop your details here.</p>
       <div className="fields">
-        <label>
-          <span>Full name</span>
-          <input name="name" required autoComplete="name" placeholder="Your name" onBlur={(e) => onName(e.target.value)} />
-        </label>
-        <label>
-          <span>Email address</span>
-          <input name="email" type="email" required autoComplete="email" placeholder="you@example.com" />
-        </label>
-        <label className="wide">
-          <span>Your message</span>
-          <textarea
-            ref={messageRef}
-            name="message"
-            required
-            rows={5}
-            placeholder="Tell me about your project, role or idea…"
-            onInput={(e) => onMessage(e.target.value)}
-          />
-        </label>
+        <Field name="name" label="Full name" error={errors.name} onBlur={(e) => (check(e), onName(e.target.value))} onInput={clear}>
+          {(props) => <input {...props} required autoComplete="name" />}
+        </Field>
+        <Field name="email" label="Email address" error={errors.email} onBlur={check} onInput={clear}>
+          {(props) => <input {...props} type="email" required autoComplete="email" placeholder="name@example.com" />}
+        </Field>
+        <Field name="message" label="Your message" wide error={errors.message} onBlur={check} onInput={clear}>
+          {(props) => <textarea {...props} ref={messageRef} required rows={5} onInput={(e) => (clear(e), onMessage(e.target.value))} />}
+        </Field>
         {/* Hidden from people; bots tend to fill it in. */}
         <input className="trap" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" />
       </div>
-      <button type="submit" disabled={status === 'sending'}>
+      <button type="submit" aria-busy={status === 'sending' || undefined}>
         {status === 'sending' ? 'Sending…' : 'Send message'} <span aria-hidden="true">›</span>
       </button>
       {status !== 'idle' && (
@@ -289,6 +352,7 @@ export default function Contact() {
         <ContactForm
           messageRef={messageRef}
           onMessage={(v) => trackWords(v)}
+          onRestore={(v) => trackWords(v, true)}
           onName={greet}
           onSent={() => {
             seen.current = 0

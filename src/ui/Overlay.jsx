@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { profile, traits } from '../content.js'
 
 // Résumé buttons only appear when profile.resume names a file in /public.
@@ -25,7 +26,27 @@ export function Captions() {
   )
 }
 
+const SECTIONS = ['about', 'journey', 'contact']
+
 export function TopBar() {
+  // The section in the middle of the screen is marked in the nav.
+  const [current, setCurrent] = useState(null)
+  useEffect(() => {
+    const seen = new Map()
+    const observer = new IntersectionObserver(
+      (changes) => {
+        for (const c of changes) seen.set(c.target.id, c.isIntersecting)
+        setCurrent(SECTIONS.find((id) => seen.get(id)) ?? null)
+      },
+      { rootMargin: '-50% 0px -50% 0px' },
+    )
+    for (const id of SECTIONS) {
+      const el = document.getElementById(id)
+      if (el) observer.observe(el)
+    }
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <header className="topbar">
       <a className="monogram" href="#top">
@@ -37,10 +58,12 @@ export function TopBar() {
         </span>
         <span className="sr-only">{profile.name}: back to top</span>
       </a>
-      <nav>
-        <a href="#about">About</a>
-        <a href="#journey">Journey</a>
-        <a href="#contact">Contact</a>
+      <nav aria-label="Sections">
+        {SECTIONS.map((id) => (
+          <a key={id} href={`#${id}`} aria-current={current === id ? 'location' : undefined}>
+            {id[0].toUpperCase() + id.slice(1)}
+          </a>
+        ))}
         {resumeUrl && (
           <a href={resumeUrl} target="_blank" rel="noreferrer">
             Résumé ↗
