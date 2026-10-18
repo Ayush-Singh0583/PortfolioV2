@@ -44,13 +44,18 @@ function progressOf(el) {
   return travel > 0 ? clamp(-r.top / travel) : r.top <= 0 ? 1 : 0
 }
 
+let lenis = null
+
+// Smoothly scroll the page to y (px from the top).
+export const scrollToY = (y) => (lenis ? lenis.scrollTo(y) : window.scrollTo({ top: y, behavior: 'smooth' }))
+
 const enteredOf = (el) => clamp(1 - el.getBoundingClientRect().top / window.innerHeight)
 
 // Smooth scrolling plus section progress. Progress is also exposed as CSS variables
 // (--hero, --about-in, --journey, --journey-in…) so overlays can animate with plain CSS.
 export function startScroll(sections) {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const lenis = new Lenis({ lerp: reduced ? 1 : 0.09, anchors: true })
+  lenis = new Lenis({ lerp: reduced ? 1 : 0.09, anchors: true })
   let raf = requestAnimationFrame(function loop(t) {
     lenis.raf(t)
     raf = requestAnimationFrame(loop)
@@ -74,6 +79,7 @@ export function startScroll(sections) {
   return () => {
     cancelAnimationFrame(raf)
     lenis.destroy()
+    lenis = null
     window.removeEventListener('scroll', update)
     window.removeEventListener('resize', update)
   }

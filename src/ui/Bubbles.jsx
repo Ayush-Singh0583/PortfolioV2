@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { traits } from '../content.js'
 import { scroll, world } from '../lib/store.js'
+import { bubbleTransform, stepBubbles } from '../lib/bubblePhysics.js'
 
 // Rim tints, cycled across the bubbles (as "r, g, b" for use in rgba()).
 const TINTS = ['255, 177, 92', '255, 128, 160', '120, 190, 255', '186, 150, 255', '120, 225, 185']
@@ -100,83 +101,8 @@ export default function Bubbles() {
 
     const physics = (dt, head) => {
       const live = bubbles.filter((b) => b.state === 'alive')
-      for (const b of live) {
-        b.age += dt
-        b.s = Math.min(1, b.s + dt * 2.4)
-        if (b.grip) {
-          // Follow the pointer stiffly while held.
-          b.vx = (pointer.x + b.grip.dx - b.x) * 16
-          b.vy = (pointer.y + b.grip.dy - b.y) * 16
-          continue
-        }
-        // A soft pull home, gentle drift, and a push away from the cursor.
-        let ax = (b.hx - b.x) * 2.6
-        let ay = (b.hy - b.y) * 2.6
-        if (!still) {
-          ax += Math.sin(t * 0.7 + b.seed) * 22
-          ay += Math.cos(t * 0.55 + b.seed * 1.7) * 16
-        }
-        const dx = b.x - pointer.x
-        const dy = b.y - pointer.y
-        const d = Math.hypot(dx, dy)
-        const reach = b.r + 70
-        if (d < reach && d > 0.5) {
-          const push = (1 - d / reach) * 3200
-          ax += (dx / d) * push
-          ay += (dy / d) * push
-        }
-        b.vx = (b.vx + ax * dt) * Math.exp(-2.4 * dt)
-        b.vy = (b.vy + ay * dt) * Math.exp(-2.4 * dt)
-      }
-
-      // Bubbles bump into each other. A held bubble doesn't give way; the others do.
-      for (let a = 0; a < live.length; a++) {
-        for (let c = a + 1; c < live.length; c++) {
-          const p = live[a]
-          const q = live[c]
-          const dx = q.x - p.x
-          const dy = q.y - p.y
-          const d = Math.hypot(dx, dy) || 0.01
-          const overlap = p.r * p.s + q.r * q.s - d
-          if (overlap <= 0) continue
-          const nx = dx / d
-          const ny = dy / d
-          const share = p.grip ? 0 : q.grip ? 1 : 0.5
-          p.x -= nx * overlap * share
-          p.y -= ny * overlap * share
-          q.x += nx * overlap * (1 - share)
-          q.y += ny * overlap * (1 - share)
-          const closing = (q.vx - p.vx) * nx + (q.vy - p.vy) * ny
-          if (closing < 0) {
-            const j = (-(1 + 0.6) * closing) / 2
-            if (!p.grip) {
-              p.vx -= j * nx
-              p.vy -= j * ny
-            }
-            if (!q.grip) {
-              q.vx += j * nx
-              q.vy += j * ny
-            }
-            const kick = Math.min(-closing / 700, 0.6)
-            p.wobbleV += kick * 4
-            q.wobbleV += kick * 4
-          }
-        }
-      }
-
-      for (const b of live) {
-        b.x += b.vx * dt
-        b.y += b.vy * dt
-        // Stay on screen, bouncing softly off the edges (below the top bar).
-        const r = b.r * b.s
-        if (b.x < r) (b.x = r), (b.vx = Math.abs(b.vx) * 0.5)
-        if (b.x > vw - r) (b.x = vw - r), (b.vx = -Math.abs(b.vx) * 0.5)
-        if (b.y < 72 + r && b.age > 0.6) (b.y = 72 + r), (b.vy = Math.abs(b.vy) * 0.5)
-        if (b.y > vh - r) (b.y = vh - r), (b.vy = -Math.abs(b.vy) * 0.5)
-        // Jelly wobble after a bump.
-        b.wobbleV += (-b.wobble * 220 - b.wobbleV * 9) * dt
-        b.wobble += b.wobbleV * dt
-      }
+      // Stay on screen, below the top bar (new bubbles may rise in from the head first).
+      stepBubbles(live, dt, { t, pointer, still, bounds: { left: 0, top: 72, right: vw, bottom: vh }, settle: 0.6 })
 
       for (const b of bubbles) {
         if (b.state === 'popping') {
@@ -196,8 +122,7 @@ export default function Bubbles() {
     const render = () => {
       for (const b of bubbles) {
         if (b.state === 'hidden') continue
-        const w = Math.max(-0.12, Math.min(0.12, b.wobble))
-        b.el.style.transform = `translate3d(${b.x - b.r}px, ${b.y - b.r}px, 0) scale(${b.s * (1 + w)}, ${b.s * (1 - w)})`
+        b.el.style.transform = bubbleTransform(b)
         b.el.style.opacity = b.state === 'popping' ? Math.max(0, 1 - b.age / 0.22) : 1
       }
     }

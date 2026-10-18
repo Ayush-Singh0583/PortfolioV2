@@ -345,7 +345,7 @@ main {
 }
 
 .journey-inner,
-.end-inner,
+.contact-inner,
 .about-inner,
 .highlights-inner {
   max-width: 1120px;
@@ -486,6 +486,7 @@ main {
 
 .timeline {
   --gap: 136px; /* the channel the wave runs down */
+  --card-h: clamp(340px, 44vh, 420px); /* every card in a deck is this tall */
   position: relative;
 }
 
@@ -717,6 +718,266 @@ main {
   border-radius: 14px;
 }
 
+/* ---------- stacked journey: each year pins while its cards stack up ---------- */
+
+.chapter {
+  position: relative;
+  /* a screen to settle in, 55vh of scroll per extra card, and a short pause on the last
+     (the JS in Timeline.jsx uses the same numbers) */
+  height: calc(100vh + (var(--count) - 1) * 55vh + 25vh);
+}
+
+.chapter-stage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--gap);
+  align-items: center;
+  height: 100vh;
+}
+
+.chapter-label {
+  grid-column: 1;
+  grid-row: 1;
+  text-align: right;
+}
+
+.chapter-label h3 {
+  margin: 10px 0 8px;
+  font: 700 clamp(40px, 4.6vw, 60px) / 1 var(--display);
+  letter-spacing: -0.03em;
+}
+
+.deck {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  height: calc(var(--card-h) + 8px);
+  margin: 6vh 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chapter.flip .chapter-label {
+  grid-column: 2;
+  text-align: left;
+}
+
+.chapter.flip .deck {
+  grid-column: 1;
+}
+
+.deck-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+
+.deck-card .entry-card,
+.deck-card.entry-milestone .entry-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: var(--card-h);
+  overflow: hidden;
+  background: var(--panel);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.deck-card .entry-card > :not(.card-number) {
+  position: relative;
+}
+
+.deck-card h4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 24px;
+}
+
+.deck-card .entry-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Bullets take whatever room is left and fade out if they run long. */
+.deck-card .highlights {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(#000 calc(100% - 28px), transparent);
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 28px), transparent);
+}
+
+.deck-card .card-foot {
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.deck-card .card-foot .stack,
+.deck-card .card-foot .langs {
+  margin-top: 0;
+}
+
+.deck-card .entry-links {
+  margin-top: 14px;
+}
+
+/* Quick facts on lighter project cards, so they carry as much as the featured ones. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  justify-content: start;
+  gap: 4px 28px;
+  margin: 22px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.facts dt {
+  font: 500 10px/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 8px 0 0;
+  font: 600 16px/1 var(--display);
+}
+
+/* A large faint number gives every card the same visual weight. */
+.card-number {
+  position: absolute;
+  right: 18px;
+  bottom: -18px;
+  font: 700 136px/1 var(--display);
+  letter-spacing: -0.05em;
+  color: rgba(243, 237, 225, 0.045);
+  pointer-events: none;
+}
+
+/* Cards further down the pile darken, and their text fades so only their edges show. */
+.deck-card .entry-card > * {
+  opacity: clamp(0, calc(1 - var(--cover, 0) * 3), 1);
+}
+
+.deck-card .entry-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: #05060a;
+  opacity: calc(var(--cover, 0) * 0.75);
+  pointer-events: none;
+}
+
+/* The year's titles; the card on top is marked, and each title jumps to its card. */
+.chapter-index {
+  display: grid;
+  gap: 8px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.chapter-index li {
+  position: relative;
+  cursor: pointer;
+  transition: color 0.25s;
+}
+
+.chapter-index li:hover,
+.chapter-index li.done {
+  color: var(--body);
+}
+
+.chapter-index li.active {
+  color: var(--amber);
+}
+
+.chapter-index li.active::after {
+  content: '';
+  position: absolute;
+  top: 0.5em;
+  right: -16px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+}
+
+.chapter.flip .chapter-index li.active::after {
+  right: auto;
+  left: -16px;
+}
+
+/* Dots ride the wave on the track itself (their top is set from JS). */
+.stacked .track .node {
+  left: calc(50% - 7px);
+  margin-top: -7px;
+}
+
+.node-milestone.passed {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 5px rgba(111, 211, 255, 0.12);
+}
+
+@media (max-width: 900px) {
+  .chapter-stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    row-gap: 14px;
+    padding: 80px 0 16px var(--gap);
+  }
+
+  .chapter-label,
+  .chapter.flip .chapter-label {
+    grid-column: 1;
+    grid-row: 1;
+    text-align: left;
+  }
+
+  .chapter-label h3 {
+    margin: 4px 0;
+    font-size: 32px;
+  }
+
+  .deck,
+  .chapter.flip .deck {
+    grid-column: 1;
+    grid-row: 2;
+    height: 100%;
+    margin: 44px 0 0; /* room for the pile's edges below the heading */
+  }
+
+  /* Keep cards short enough to fit on a phone screen. */
+  .chapter-index,
+  .deck .highlights {
+    display: none;
+  }
+
+  .deck-card {
+    bottom: 0;
+  }
+
+  .deck-card .entry-card,
+  .deck-card.entry-milestone .entry-card {
+    height: min(100%, 420px);
+  }
+}
+
 /* ---------- beyond the code ---------- */
 
 .beyond {
@@ -806,6 +1067,28 @@ main {
   margin-top: 18px;
 }
 
+/* GitHub-style language proportions. */
+.langbar {
+  display: flex;
+  gap: 2px;
+  height: 4px;
+  margin: 16px 0 12px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.langbar span {
+  min-width: 4px;
+}
+
+.langbar + .langs {
+  margin-top: 0;
+}
+
+.deck-card .langbar {
+  margin-top: 0;
+}
+
 .reveal {
   opacity: 0;
   transform: translateY(28px);
@@ -834,49 +1117,269 @@ main {
   }
 }
 
-/* ---------- end ---------- */
+/* ---------- contact ---------- */
 
-.end {
-  padding: 14vh var(--gutter) 6vh;
+.contact {
+  padding: 16vh var(--gutter) 5vh;
   border-top: 1px solid var(--line);
 }
 
-.end-inner h2 {
-  max-width: 16ch;
-  margin-bottom: 20px;
-  font: 700 clamp(36px, 5.5vw, 72px) / 0.98 var(--display);
-  letter-spacing: -0.03em;
+.contact-head {
+  max-width: 760px;
+  margin: 0 auto 8vh;
+  text-align: center;
 }
 
-.end-inner p:not(.eyebrow) {
-  max-width: 520px;
-  margin-bottom: 24px;
+.contact-head h2 {
+  font: 700 clamp(44px, 7.5vw, 104px) / 0.92 var(--display);
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.contact-sub {
+  margin-top: 18px;
   font-size: 17px;
   line-height: 1.6;
   color: var(--body);
 }
 
-.end-inner p.availability {
-  margin: 0 0 24px;
-  font: 500 12px/1 var(--mono);
-  color: #9fe3b4;
+.contact-head .availability {
+  margin-top: 22px;
 }
 
-.end-links a.primary {
+.contact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 56px;
+}
+
+.contact-card {
+  padding: 28px;
+  background: rgba(13, 15, 21, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+
+.contact-card h3 {
+  font: 700 30px/1.1 var(--display);
+  letter-spacing: -0.02em;
+}
+
+.contact-note {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.contact-note a,
+.form-status a {
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 177, 92, 0.5);
+  text-underline-offset: 3px;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 14px;
+  margin-top: 26px;
+}
+
+.fields label {
+  display: grid;
+  gap: 8px;
+}
+
+.fields label.wide {
+  grid-column: 1 / -1;
+}
+
+.fields label > span {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.fields input,
+.fields textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  background: #17181e;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.fields textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.fields input::placeholder,
+.fields textarea::placeholder {
+  color: #6f6c66;
+}
+
+.fields input:focus,
+.fields textarea:focus {
+  border-color: rgba(255, 177, 92, 0.6);
+  box-shadow: 0 0 0 3px rgba(255, 177, 92, 0.12);
+}
+
+/* Spam trap: off screen for people, still filled in by many bots. */
+.fields .trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.contact-card button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px;
+  font: 600 15px/1 var(--display);
+  color: var(--ink);
+  background: #1c1d23;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.contact-card button:hover {
   border-color: var(--amber);
-  background: var(--amber);
-  color: #1a1206;
-}
-
-.end-links a.primary:hover {
-  background: transparent;
   color: var(--amber);
 }
 
-.end-inner footer {
+.contact-card button span {
+  transition: transform 0.2s;
+}
+
+.contact-card button:hover span {
+  transform: translateX(3px);
+}
+
+.contact-card button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.form-status {
+  margin-top: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--body);
+}
+
+.form-status.sent {
+  color: #9fe3b4;
+}
+
+.form-status.error {
+  color: #ff9b8a;
+}
+
+/* The thoughts panel beside the form: the intro's glass bubbles, smaller. */
+.thoughts-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+}
+
+.thoughts {
+  position: relative;
+  width: 100%;
+  height: clamp(360px, 52vh, 480px);
+  background: radial-gradient(circle at 50% 55%, rgba(255, 177, 92, 0.07), rgba(255, 177, 92, 0) 65%);
+}
+
+.thought {
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f7f2e8;
+}
+
+.thought.topic {
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.thought.topic:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.thought.word {
+  font-size: 12px;
+  font-weight: 500;
+  cursor: default;
+}
+
+.thought.name {
+  font-size: 14px;
+}
+
+.thoughts-caption {
+  font: 500 12px/1.4 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--muted);
+}
+
+.contact-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   margin-top: 12vh;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.contact-foot p {
   font: 500 12px/1 var(--mono);
   color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .fields {
+    grid-template-columns: 1fr;
+  }
+
+  /* Topics first on phones, so "pick a topic" is the first thing people see. */
+  .thoughts-wrap {
+    order: -1;
+  }
+
+  .thoughts {
+    height: 280px;
+  }
 }
 
 /* ---------- loader ---------- */

@@ -16,19 +16,46 @@ export const profile = {
   ],
 }
 
-// The words that float out of your head, one keycap each. Longer words get wider keys.
+// The contact section at the end.
+export const contact = {
+  email: 'ayushsingh10580@gmail.com',
+  // With no endpoint, "Send" opens the visitor's email app with the message filled in.
+  // For messages straight to your inbox, use a free form service:
+  //   Formspree: endpoint: 'https://formspree.io/f/<your-form-id>'
+  //   Web3Forms: endpoint: 'https://api.web3forms.com/submit', extraFields: { access_key: '<your-key>' }
+  endpoint: null,
+  extraFields: {},
+  // Conversation starters floating beside the form; clicking one starts the message.
+  topics: [
+    { label: 'Internship', message: "Hi Ayush, I'd like to talk about an internship." },
+    { label: 'Collaboration', message: "Hi Ayush, I have a project idea and I'd love to build it together." },
+    { label: 'Freelance work', message: "Hi Ayush, I'm looking for help with a freelance project." },
+    { label: 'Feedback', message: 'Hi Ayush, a few thoughts on your portfolio: ' },
+    { label: 'Just saying hi', message: 'Hi Ayush, just saying hi!' },
+  ],
+}
+
+// The words that float out of your head, one bubble each. Around a dozen fits on screen.
 export const traits = [
+  // Ayush's own words.
   'Overthinker',
   'Conceptual Thinker',
   'Problem Solver',
-  // Placeholders: swap these for your own.
+  // How ChatGPT describes him after ~3 years of conversations, one word per cluster:
+  // Curious (also Inquisitive), Analytical (Logical), Meticulous (Methodical, Disciplined),
+  // Persistent (Determined), Innovative (Creative, Original, Imaginative), Introspective (Reflective).
+  // Unused from that list: Technical, Independent, Ambitious, Practical, Observant, Adaptable,
+  // Articulate, Expressive, Experimental, Versatile, Perceptive.
   'Curious',
-  'Systems Thinker',
-  'Builder',
-  'Fast Learner',
-  'Night Owl',
-  'Debugger',
-  'Detail-Oriented',
+  'Analytical',
+  'Meticulous',
+  'Persistent',
+  'Resourceful',
+  'Innovative',
+  'Strategic',
+  'Introspective',
+  'Skeptical',
+  'Poetic',
 ]
 
 // The opening scene: your Ghibli portrait as a cutout whose head opens.
@@ -70,6 +97,9 @@ export const about = {
 }
 
 export const journey = {
+  // 'stack': each year pins in place while its cards slide in and stack up.
+  // 'list': each year's cards scroll past in a column.
+  layout: 'stack',
   // First day of 1st year. Academic years are counted from this date.
   collegeStart: '2023-08-01',
   // Things that happened outside GitHub. `label` replaces the shown date when the exact month isn't known.

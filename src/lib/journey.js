@@ -62,6 +62,7 @@ const projects = github.repos
       languages,
       url: r.url,
       homepage: r.homepage,
+      updated: r.pushed_at,
       featured: o.featured ?? false,
       stack: o.stack,
       highlights: o.highlights,

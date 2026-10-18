@@ -4,7 +4,8 @@ import Loader from './ui/Loader.jsx'
 import Bubbles from './ui/Bubbles.jsx'
 import Timeline from './ui/Timeline.jsx'
 import { About, Highlights } from './ui/About.jsx'
-import { Captions, EndSection, TopBar } from './ui/Overlay.jsx'
+import Contact from './ui/Contact.jsx'
+import { Captions, TopBar } from './ui/Overlay.jsx'
 import { startScroll } from './lib/store.js'
 
 export default function App() {
@@ -40,8 +41,8 @@ export default function App() {
         <section className="beyond" aria-label="Leadership and certifications">
           <Highlights />
         </section>
-        <section className="end" aria-label="Contact">
-          <EndSection />
+        <section id="contact" className="contact" aria-label="Contact">
+          <Contact />
         </section>
       </main>
     </>
