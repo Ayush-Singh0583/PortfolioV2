@@ -13,6 +13,8 @@ npm-debug.log*
 .env.*
 
 # Personal and working files: kept on this computer only, never pushed
+Changes.md
+ideas.md
 AYUSH_SINGH_RVITM_ISE.pdf
 kb/
 CLAUDE.md

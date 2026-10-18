@@ -69,41 +69,49 @@ p {
 
 /* ---------- 3D intro ---------- */
 
-/* The night sky (src/ui/Sky.jsx), behind everything. */
-.sky {
+/* The full-screen layers (sky, blurred backdrop, 3D stage, bubbles) keep one height while
+   a phone's address bar hides and shows: the large viewport, or the tallest height seen
+   (--stable-h, from store.js). Otherwise every scroll on a phone resized and re-zoomed them. */
+.sky,
+.backdrop,
+.stage,
+.bubbles {
   position: fixed;
-  inset: 0;
-  z-index: 0;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: max(100lvh, var(--stable-h, 0px));
 }
 
-/* The portrait, blurred, with a blue glow, over the sky. It fades in as the (transparent)
-   3D stage fades out. The image is placed exactly where the 3D portrait stands at the end
-   of the About section (centred at 75vw, full portrait 155vh tall; the file has a 40px
-   blur margin, hence the slightly larger box), so one dissolves into the other. */
+/* The night sky (src/ui/Sky.jsx), behind everything. */
+.sky {
+  z-index: 0;
+}
+
+/* The portrait, softly blurred, with a blue glow, over the sky. It fades in exactly where
+   the 3D portrait stands at the end of the About section (centred at 75vw, full portrait
+   155vh tall; the file has a blur margin, hence the slightly larger box), so one dissolves
+   into the other, then glides to the centre of the screen as the journey scrolls up. */
 .backdrop {
   --reveal: clamp(0, calc((var(--journey-in, 0) - 0.1) * 2.5), 1);
-  position: fixed;
-  inset: 0;
+  --glide: clamp(0, calc((var(--journey-in, 0) - 0.45) * 2.2), 1); /* 0 = right, 1 = centre */
   z-index: 0;
   overflow: hidden;
-  background: radial-gradient(ellipse 60% 70% at 72% 50%, rgba(28, 33, 64, 0.55) 0%, rgba(14, 16, 32, 0.3) 45%, rgba(5, 6, 11, 0) 80%);
+  background: radial-gradient(ellipse 60% 70% at calc(72% - 22% * var(--glide)) 50%, rgba(28, 33, 64, 0.55) 0%, rgba(14, 16, 32, 0.3) 45%, rgba(5, 6, 11, 0) 80%);
   opacity: var(--reveal);
 }
 
 .backdrop img {
   position: absolute;
   top: 14.8vh;
-  left: 75vw;
+  left: 50vw;
   height: 173.6vh;
   opacity: 0.5;
-  transform: translate(-50%, calc(var(--journey, 0) * -14vh));
+  transform: translate(calc(-50% + 25vw * (1 - var(--glide))), calc(var(--journey, 0) * -14vh));
 }
 
 .stage {
-  position: fixed;
-  inset: 0;
   z-index: 0;
   /* The portrait stays beside the About text, then fades as the journey scrolls in. */
   opacity: calc(1 - clamp(0, (var(--journey-in, 0) - 0.1) * 2.5, 1));
@@ -122,9 +130,9 @@ p {
 
   .backdrop img {
     top: 6vh;
-    left: 50vw;
     height: 130vh;
     opacity: 0.4;
+    transform: translate(-50%, calc(var(--journey, 0) * -14vh)); /* already centred */
   }
 }
 
@@ -258,8 +266,6 @@ main {
 /* ---------- trait bubbles ---------- */
 
 .bubbles {
-  position: fixed;
-  inset: 0;
   z-index: 3;
   pointer-events: none;
 }
@@ -805,6 +811,7 @@ main {
   column-gap: var(--gap);
   align-items: center;
   height: 100vh;
+  height: 100svh; /* the small viewport, so cards are never under a phone's address bar */
   padding: 88px 0 28px; /* below the fixed top bar (useCardSizes assumes these numbers) */
 }
 
@@ -1602,6 +1609,19 @@ main {
 
   .entry-text {
     font-size: 14px;
+  }
+}
+
+/* Phones: backdrop blur on many moving elements over a 3D canvas is very costly there. */
+@media (max-width: 900px), (hover: none) {
+  .bubble,
+  .scroll-hint {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .scroll-hint {
+    background: rgba(7, 8, 12, 0.75);
   }
 }
 

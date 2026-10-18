@@ -69,10 +69,16 @@ export default function Bubbles() {
     let laidOut = null
     let t = 0
     let h = scroll.hero // own smoothing: the 3D scene (and its smoothed values) stops once hidden
+    let jumping = false
 
+    // Sized from the layer, which keeps its height while a phone's address bar hides and
+    // shows (see .bubbles in styles.css), so bubbles only re-size on a real size change.
     const size = () => {
-      vw = window.innerWidth
-      vh = window.innerHeight
+      const w = layer.current.clientWidth
+      const hgt = layer.current.clientHeight
+      if (w === vw && hgt === vh) return
+      vw = w
+      vh = hgt
       const k = Math.min(1.15, Math.max(0.6, Math.min(vh / 1000, vw / 900)))
       for (const b of bubbles) {
         b.r = (34 + 10 * Math.sqrt(traits[b.i].length)) * k
@@ -133,6 +139,10 @@ export default function Bubbles() {
       last = now
       t += dt
       h += (scroll.hero - h) * (1 - Math.exp(-6 * dt))
+      // A jump past the intro (a nav link, or reloading partway down) races through it:
+      // don't spawn bubbles on the way. Once detected, it holds until the scroll catches up.
+      const lag = Math.abs(scroll.hero - h)
+      jumping = lag > 0.12 || (jumping && lag > 0.03)
       const head = world.opening
       if (head && (!laidOut || laidOut.vw !== vw || Math.hypot(head.x - laidOut.x, head.y - laidOut.y) > 6)) {
         homes(bubbles, head, vw, vh)
@@ -140,7 +150,7 @@ export default function Bubbles() {
       }
       for (const b of bubbles) {
         const wanted = h >= appearAt(b.i, n) && h < popAt(b.i, n)
-        if (wanted && b.state !== 'alive' && head) spawn(b, head)
+        if (wanted && b.state !== 'alive' && head && !jumping) spawn(b, head)
         else if (!wanted && b.state === 'alive') {
           b.state = h >= popAt(b.i, n) ? 'popping' : 'sinking'
           b.age = 0

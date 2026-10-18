@@ -30,10 +30,16 @@ export default function Sky() {
     let last = 0
     let raf = 0
 
+    // Small screens draw at 1x and about 30fps: stars are tiny anyway, and it saves the
+    // phone's GPU for the 3D intro.
+    let small = false
     const build = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
-      w = window.innerWidth
-      h = window.innerHeight
+      // The canvas keeps its size while a phone's address bar hides and shows (see .sky in
+      // styles.css), so this only runs on a real size change, e.g. rotating the phone.
+      w = canvas.clientWidth
+      h = canvas.clientHeight
+      small = w < 720
+      const dpr = small ? 1 : Math.min(window.devicePixelRatio || 1, 1.5)
       canvas.width = Math.round(w * dpr)
       canvas.height = Math.round(h * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -138,9 +144,11 @@ export default function Sky() {
     }
 
     const frame = (now) => {
-      const dt = Math.min((now - (last || now)) / 1000, 0.05)
-      last = now
-      draw(dt)
+      const dt = last ? (now - last) / 1000 : 0
+      if (!last || !small || dt >= 1 / 32) {
+        last = now
+        draw(Math.min(dt, 0.05))
+      }
       raf = requestAnimationFrame(frame)
     }
 
@@ -151,6 +159,7 @@ export default function Sky() {
     // With reduced motion the sky is drawn still, and only redrawn when the page scrolls.
     const redraw = () => draw(0)
     const onResize = () => {
+      if (canvas.clientWidth === w && canvas.clientHeight === h) return
       build()
       if (still) redraw()
     }

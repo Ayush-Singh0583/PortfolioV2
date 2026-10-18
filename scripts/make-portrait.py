@@ -89,13 +89,13 @@ ys, xs = np.where(lid > 0.02)
 lid_box = (int(xs.min()) - 4, int(ys.min()) - 4, int(xs.max()) + 5, cut)
 save(lid, out / 'lid.webp', lid_box, lossless=True)
 
-# A small, pre-blurred copy of the whole portrait for the page background, with a 40px
-# margin so the blur isn't cut off at the edges (the CSS in .backdrop accounts for it).
+# A softly blurred copy of the whole portrait for the page background, 600px wide with an
+# 80px margin so the blur isn't cut off at the edges (the CSS in .backdrop accounts for it).
 full = Image.fromarray((np.clip(np.dstack([rgb, a]), 0, 1) * 255 + 0.5).astype(np.uint8), 'RGBA')
-small = full.resize((300, round(300 * H / W)), Image.LANCZOS)
-padded = Image.new('RGBA', (small.width + 80, small.height + 80), (0, 0, 0, 0))
-padded.alpha_composite(small, (40, 40))
-padded.filter(ImageFilter.GaussianBlur(9)).save(out / 'blur.webp', 'WEBP', quality=80, method=6)
+small = full.resize((600, round(600 * H / W)), Image.LANCZOS)
+padded = Image.new('RGBA', (small.width + 160, small.height + 160), (0, 0, 0, 0))
+padded.alpha_composite(small, (80, 80))
+padded.filter(ImageFilter.GaussianBlur(6)).save(out / 'blur.webp', 'WEBP', quality=80, method=6)
 
 # Measurements used to place everything in 3D.
 head_top = int(np.where((a > 0.5).any(axis=1))[0].min())

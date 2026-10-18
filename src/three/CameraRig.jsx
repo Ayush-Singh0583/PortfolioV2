@@ -12,11 +12,12 @@ const pose = (target, r, y) => ({ target, r, y })
 // portrait filling the screen, then eases back to the intro frame as the head opens.
 // The frame is as far out as the camera ever goes.
 function heroKeys(f, head) {
-  const close = f.r * 0.78
+  const aspect = f.halfW / f.halfH
+  // Phones zoom in less: the screen is narrow, so a close-up crops the shoulders.
+  const close = f.r * (aspect < 0.8 ? 0.9 : 0.78)
   // Keep a little space above the head; the rest of the screen is face and shoulders. On
   // wide screens the portrait sits right of centre, leaving the left for the name.
   // (Less-wide screens need more, since the portrait takes up more of their width.)
-  const aspect = f.halfW / f.halfH
   const aside = aspect > 1.25 ? f.halfW * (close / f.r) * Math.min(0.32, Math.max(0.2, 0.2 + (1.9 - aspect) * 0.25)) : 0
   const closeTarget = new THREE.Vector3(f.target.x - aside, head.center.y + 0.19 - close * (f.halfH / f.r), f.target.z)
   return [

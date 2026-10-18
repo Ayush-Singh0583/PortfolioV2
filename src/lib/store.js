@@ -38,9 +38,30 @@ export const uiStore = {
 }
 export const useUI = (select) => useSyncExternalStore(uiStore.subscribe, () => select(uiStore.get()))
 
+// Phones change the viewport height as the address bar hides and shows while scrolling.
+// Anything that must not jump when that happens (the fixed canvases, scroll progress)
+// uses the tallest height seen at the current width instead; it resets on rotation.
+// Exposed as --stable-h. Registered at import, so it runs before other resize handlers.
+let stableW = 0
+let stableH = 0
+export const stableHeight = () => stableH
+function trackStableHeight() {
+  if (window.innerWidth !== stableW) {
+    stableW = window.innerWidth
+    stableH = window.innerHeight
+  } else {
+    stableH = Math.max(stableH, window.innerHeight)
+  }
+  document.documentElement.style.setProperty('--stable-h', `${stableH}px`)
+}
+if (typeof window !== 'undefined') {
+  trackStableHeight()
+  window.addEventListener('resize', trackStableHeight)
+}
+
 function progressOf(el) {
   const r = el.getBoundingClientRect()
-  const travel = r.height - window.innerHeight
+  const travel = r.height - stableH
   return travel > 0 ? clamp(-r.top / travel) : r.top <= 0 ? 1 : 0
 }
 
@@ -49,7 +70,7 @@ let lenis = null
 // Smoothly scroll the page to y (px from the top).
 export const scrollToY = (y) => (lenis ? lenis.scrollTo(y) : window.scrollTo({ top: y, behavior: 'smooth' }))
 
-const enteredOf = (el) => clamp(1 - el.getBoundingClientRect().top / window.innerHeight)
+const enteredOf = (el) => clamp(1 - el.getBoundingClientRect().top / stableH)
 
 // Smooth scrolling plus section progress. Progress is also exposed as CSS variables
 // (--hero, --about-in, --journey, --journey-in…) so overlays can animate with plain CSS.

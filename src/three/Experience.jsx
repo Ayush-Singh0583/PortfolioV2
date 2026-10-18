@@ -72,7 +72,8 @@ export default function Experience() {
         <CameraRig />
       </Suspense>
       <EffectComposer multisampling={small ? 0 : 4}>
-        <Bloom mipmapBlur intensity={0.8} luminanceThreshold={1} luminanceSmoothing={0.25} />
+        {/* Fewer blur levels on phones: much cheaper, and the glow looks the same at that size. */}
+        <Bloom mipmapBlur levels={small ? 5 : 8} intensity={0.8} luminanceThreshold={1} luminanceSmoothing={0.25} />
         <Vignette offset={0.3} darkness={0.7} />
         {/* Neutral keeps the illustration's colours close to the original. */}
         <ToneMapping mode={ToneMappingMode.NEUTRAL} />
