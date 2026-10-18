@@ -1,8 +1,8 @@
 import * as THREE from 'three'
 
 // The widest the intro ever gets: head and shoulders, with room above the head for the
-// keycaps. Ayush picked this as the limit; the portrait may be bigger, never smaller
-// (see kb/decisions.md). The camera frames the shot with it; the keycaps fit inside it.
+// trait bubbles. Ayush picked this as the limit: the portrait may be bigger (the first
+// view is closer), never smaller. CameraRig frames the shot with it.
 export function introFrame(head, aspect, fov) {
   const t = Math.tan((fov * Math.PI) / 360)
   // Show at least 0.7m of height and 0.55m of width around the target.

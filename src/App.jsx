@@ -22,14 +22,16 @@ export default function App() {
       <div className="backdrop" aria-hidden="true">
         <img src={`${import.meta.env.BASE_URL}portrait/blur.webp`} alt="" />
       </div>
-      <div className="stage">
+      {/* The 3D scene is visual only; its words are in the captions and bubbles below. */}
+      <div className="stage" aria-hidden="true">
         <Experience />
       </div>
-      <Captions />
-      <Bubbles />
       <TopBar />
       <Loader />
       <main id="top">
+        {/* Fixed overlays for the intro, inside <main> so they belong to the page content. */}
+        <Captions />
+        <Bubbles />
         {/* An empty, tall section: scrolling through it drives the 3D intro. */}
         <section ref={hero} className="hero" aria-label="Introduction" />
         <section ref={about} id="about" className="about" aria-label="About">

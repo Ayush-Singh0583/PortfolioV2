@@ -5,11 +5,27 @@
 //   r, s           radius and current scale (grows in to 1)
 //   wobble, wobbleV, seed, age, grip ({ dx, dy } while held by the pointer, else null)
 
-// One step for the given live bubbles: a soft pull home, gentle drift, a push away from
-// the pointer, bumping into each other (a held bubble doesn't give way), staying inside
-// `bounds`, and a jelly wobble after bumps. The top edge only applies once a bubble is
-// older than `settle` seconds, so new ones can rise in from outside.
+// One step for the given live bubbles: a soft pull home, gentle drift, being swept along
+// by a fast-moving pointer, bumping into each other (a held bubble doesn't give way),
+// staying inside `bounds`, and a jelly wobble after bumps. The top edge only applies once
+// a bubble is older than `settle` seconds, so new ones can rise in from outside.
+// `pointer` is { x, y } (off screen: -1e4); its previous position and time are kept on it.
 export function stepBubbles(live, dt, { t, pointer, still, bounds, settle = 0 }) {
+  // Only a quick sweep moves bubbles; a slow or still pointer leaves them alone, so they
+  // can be grabbed or clicked. Speed is measured in real time (dt is capped for the
+  // physics), and the whole path since the last frame counts, so a fast flick between
+  // two frames still hits the bubbles it crossed.
+  const now = performance.now()
+  const tracked = pointer.px > -5000 && pointer.x > -5000 && pointer.pt !== undefined
+  const elapsed = tracked ? Math.max((now - pointer.pt) / 1000, 1 / 240) : 1
+  const svx = tracked ? Math.max(-3000, Math.min(3000, (pointer.x - pointer.px) / elapsed)) : 0
+  const svy = tracked ? Math.max(-3000, Math.min(3000, (pointer.y - pointer.py) / elapsed)) : 0
+  const path = tracked && { ax: pointer.px, ay: pointer.py, bx: pointer.x, by: pointer.y }
+  pointer.px = pointer.x
+  pointer.py = pointer.y
+  pointer.pt = now
+  const sweeping = Math.hypot(svx, svy) > 500
+
   for (const b of live) {
     b.age += dt
     b.s = Math.min(1, b.s + dt * 2.4)
@@ -24,17 +40,17 @@ export function stepBubbles(live, dt, { t, pointer, still, bounds, settle = 0 })
       ax += Math.sin(t * 0.7 + b.seed) * 22
       ay += Math.cos(t * 0.55 + b.seed * 1.7) * 16
     }
-    const dx = b.x - pointer.x
-    const dy = b.y - pointer.y
-    const d = Math.hypot(dx, dy)
-    const reach = b.r + 70
-    if (d < reach && d > 0.5) {
-      const push = (1 - d / reach) * 3200
-      ax += (dx / d) * push
-      ay += (dy / d) * push
-    }
     b.vx = (b.vx + ax * dt) * Math.exp(-2.4 * dt)
     b.vy = (b.vy + ay * dt) * Math.exp(-2.4 * dt)
+    if (sweeping) {
+      const reach = b.r + 30
+      const d = distanceToPath(b.x, b.y, path)
+      if (d < reach) {
+        const k = Math.min(1, (1 - d / reach) * 14 * dt)
+        b.vx += (svx * 0.7 - b.vx) * k
+        b.vy += (svy * 0.7 - b.vy) * k
+      }
+    }
   }
 
   for (let a = 0; a < live.length; a++) {
@@ -82,6 +98,15 @@ export function stepBubbles(live, dt, { t, pointer, still, bounds, settle = 0 })
     b.wobbleV += (-b.wobble * 220 - b.wobbleV * 9) * dt
     b.wobble += b.wobbleV * dt
   }
+}
+
+// Distance from (x, y) to the segment the pointer travelled.
+function distanceToPath(x, y, { ax, ay, bx, by }) {
+  const vx = bx - ax
+  const vy = by - ay
+  const len2 = vx * vx + vy * vy
+  const k = len2 ? Math.max(0, Math.min(1, ((x - ax) * vx + (y - ay) * vy) / len2)) : 0
+  return Math.hypot(x - (ax + k * vx), y - (ay + k * vy))
 }
 
 // CSS transform for a bubble element positioned at the top-left of its layer.

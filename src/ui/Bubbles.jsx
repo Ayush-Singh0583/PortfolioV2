@@ -151,6 +151,8 @@ export default function Bubbles() {
       if (bubbles.some((b) => b.state !== 'hidden')) {
         physics(dt, head)
         render()
+      } else {
+        pointer.px = -1e4 // forget the last position, so no stale "sweep" when they return
       }
       raf = requestAnimationFrame(frame)
     })
@@ -186,13 +188,19 @@ export default function Bubbles() {
         b.vx = Math.max(-1600, Math.min(1600, pointer.vx))
         b.vy = Math.max(-1600, Math.min(1600, pointer.vy))
       }
+      // On touch screens a vertical swipe scrolls the page instead (touch-action: pan-y),
+      // and the browser cancels the grab: let go without flinging.
+      const cancel = () => {
+        b.grip = null
+        b.el.classList.remove('held')
+      }
       b.el.addEventListener('pointerdown', down)
       b.el.addEventListener('pointerup', up)
-      b.el.addEventListener('pointercancel', up)
+      b.el.addEventListener('pointercancel', cancel)
       return () => {
         b.el.removeEventListener('pointerdown', down)
         b.el.removeEventListener('pointerup', up)
-        b.el.removeEventListener('pointercancel', up)
+        b.el.removeEventListener('pointercancel', cancel)
       }
     })
 
@@ -210,7 +218,7 @@ export default function Bubbles() {
   }, [])
 
   return (
-    <div className="bubbles" ref={layer} aria-label="What goes on in my head">
+    <div className="bubbles" ref={layer} role="group" aria-label="What goes on in my head">
       {traits.map((label, i) => (
         <div key={label} className="bubble" style={{ '--tint': TINTS[i % TINTS.length] }}>
           <span>{label}</span>

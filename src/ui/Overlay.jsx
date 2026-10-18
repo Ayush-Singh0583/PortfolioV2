@@ -8,7 +8,7 @@ export function Captions() {
   return (
     <div className="captions">
       <div className="intro">
-        <p className="eyebrow">Hi, I'm</p>
+        <p className="greeting">Hi, I'm</p>
         <h1>{profile.name}</h1>
         <p className="tagline">{profile.tagline}</p>
         <p className="role">{profile.role}</p>
@@ -28,11 +28,14 @@ export function Captions() {
 export function TopBar() {
   return (
     <header className="topbar">
-      <a className="monogram" href="#top" aria-label="Back to top">
-        {profile.name
-          .split(' ')
-          .map((w) => w[0])
-          .join('')}
+      <a className="monogram" href="#top">
+        <span aria-hidden="true">
+          {profile.name
+            .split(' ')
+            .map((w) => w[0])
+            .join('')}
+        </span>
+        <span className="sr-only">{profile.name}: back to top</span>
       </a>
       <nav>
         <a href="#about">About</a>

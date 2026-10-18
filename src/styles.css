@@ -34,6 +34,23 @@ a {
   text-decoration: none;
 }
 
+/* Text for screen readers only. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Keyboard focus: a clear ring on anything focusable (form fields have their own). */
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+
 h1,
 h2,
 h3,
@@ -127,31 +144,54 @@ main {
 }
 
 .intro {
+  max-width: min(640px, calc(100vw - 32px));
   opacity: clamp(0, calc(1 - var(--hero, 0) * 8), 1);
   transform: translateY(calc(var(--hero, 0) * -160px));
 }
 
+.greeting {
+  margin-bottom: 10px;
+  font: 600 clamp(24px, 2.4vw, 38px) / 1.1 var(--display);
+  letter-spacing: -0.01em;
+  color: var(--amber);
+}
+
 .intro h1 {
-  font: 700 clamp(46px, 8.5vw, 116px) / 0.9 var(--display);
+  font: 700 clamp(56px, 8.5vw, 128px) / 0.9 var(--display);
   letter-spacing: -0.035em;
 }
 
 .tagline {
-  margin-top: 16px;
-  font-size: clamp(16px, 1.6vw, 20px);
-  color: var(--body);
+  margin-top: 22px;
+  font-size: clamp(19px, 1.75vw, 28px);
+  line-height: 1.3;
+  color: var(--ink);
 }
 
 .role {
-  margin-top: 8px;
-  font: 500 13px/1.4 var(--mono);
-  color: var(--muted);
+  margin-top: 12px;
+  font: 500 clamp(14px, 1.05vw, 17px) / 1.45 var(--mono);
+  color: #b9b4aa;
+}
+
+.intro .availability {
+  margin-top: 22px;
+  padding: 9px 15px;
+  font-size: clamp(12px, 0.85vw, 14px);
+}
+
+/* Wide screens: the portrait sits right of centre (CameraRig), the text stays left of it. */
+@media (min-aspect-ratio: 5/4) {
+  .intro {
+    max-width: min(640px, 34vw);
+  }
 }
 
 .availability {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
   margin-top: 18px;
   padding: 7px 12px;
   font: 500 12px/1 var(--mono);
@@ -173,13 +213,19 @@ main {
 .scroll-hint {
   position: absolute;
   left: 50%;
-  bottom: 28px;
+  bottom: 24px;
   transform: translateX(-50%);
-  font: 500 12px/1 var(--mono);
+  padding: 9px 16px;
+  font: 500 13px/1 var(--mono);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--body);
   white-space: nowrap;
+  background: rgba(7, 8, 12, 0.55);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   opacity: clamp(0, calc(1 - var(--hero, 0) * 8), 1);
 }
 
@@ -222,7 +268,7 @@ main {
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
   visibility: hidden;
   cursor: grab;
-  touch-action: none;
+  touch-action: pan-y; /* a vertical swipe still scrolls the page on phones */
   user-select: none;
   will-change: transform;
   /* soap film: clear middle, a highlight, and an iridescent rim in the bubble's tint */
@@ -421,7 +467,7 @@ main {
 
 .skills dt {
   margin-bottom: 8px;
-  font: 500 11px/1 var(--mono);
+  font: 500 12px/1 var(--mono);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
@@ -473,7 +519,7 @@ main {
 }
 
 .stats dt {
-  font: 500 11px/1 var(--mono);
+  font: 500 12px/1 var(--mono);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
@@ -486,8 +532,9 @@ main {
 
 .timeline {
   --gap: 136px; /* the channel the wave runs down */
-  --card-h: clamp(340px, 44vh, 420px); /* every card in a deck is this tall */
   position: relative;
+  /* Up to 1240px wide (the page text is 1120px), for roomier cards. */
+  margin-inline: calc((min(100vw - 2 * var(--gutter), 1240px) - min(100vw - 2 * var(--gutter), 1120px)) / -2);
 }
 
 /* --wave-w is set from JS to fit the wave's amplitude. */
@@ -660,7 +707,7 @@ main {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 10px;
-  font: 500 11px/1 var(--mono);
+  font: 500 12px/1 var(--mono);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
@@ -735,6 +782,7 @@ main {
   column-gap: var(--gap);
   align-items: center;
   height: 100vh;
+  padding: 88px 0 28px; /* below the fixed top bar (useCardSizes assumes these numbers) */
 }
 
 .chapter-label {
@@ -750,11 +798,12 @@ main {
 }
 
 .deck {
+  --card-h: 420px; /* replaced per deck by useCardSizes in Timeline.jsx */
   position: relative;
   grid-column: 2;
   grid-row: 1;
   height: calc(var(--card-h) + 8px);
-  margin: 6vh 0 0;
+  margin: 52px 0 0; /* the cards underneath peek out above the top one */
   padding: 0;
   list-style: none;
 }
@@ -793,27 +842,37 @@ main {
 }
 
 .deck-card h4 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   font-size: 24px;
 }
 
-.deck-card .entry-text {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Bullets take whatever room is left and fade out if they run long. */
-.deck-card .highlights {
+.deck-card .card-body {
+  display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
-  mask-image: linear-gradient(#000 calc(100% - 28px), transparent);
-  -webkit-mask-image: linear-gradient(#000 calc(100% - 28px), transparent);
+}
+
+/* On lighter cards the quick facts sit at the bottom, just above the footer, so the card
+   reads top (what it is) and bottom (the data) whatever the deck's height. */
+.deck-card .facts {
+  margin-top: auto;
+}
+
+.deck-card .entry-text:has(+ .facts) {
+  margin-bottom: 22px; /* still some space when the card is tight */
+}
+
+/* Only on screens too short for the tallest card: the body scrolls, with a fade hinting
+   at more below. */
+.deck-card .entry-card.overflowing .card-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(243, 237, 225, 0.2) transparent;
+  padding-bottom: 18px;
+  mask-image: linear-gradient(#000 calc(100% - 26px), transparent);
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 26px), transparent);
 }
 
 .deck-card .card-foot {
@@ -842,7 +901,7 @@ main {
 }
 
 .facts dt {
-  font: 500 10px/1 var(--mono);
+  font: 500 11px/1 var(--mono);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
@@ -886,14 +945,23 @@ main {
   margin: 28px 0 0;
   padding: 0;
   list-style: none;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--muted);
 }
 
 .chapter-index li {
   position: relative;
-  cursor: pointer;
   transition: color 0.25s;
+}
+
+.chapter-index button {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
 }
 
 .chapter-index li:hover,
@@ -958,7 +1026,6 @@ main {
   .chapter.flip .deck {
     grid-column: 1;
     grid-row: 2;
-    height: 100%;
     margin: 44px 0 0; /* room for the pile's edges below the heading */
   }
 
@@ -966,15 +1033,6 @@ main {
   .chapter-index,
   .deck .highlights {
     display: none;
-  }
-
-  .deck-card {
-    bottom: 0;
-  }
-
-  .deck-card .entry-card,
-  .deck-card.entry-milestone .entry-card {
-    height: min(100%, 420px);
   }
 }
 
@@ -1008,7 +1066,7 @@ main {
 }
 
 .highlight-org {
-  font: 500 11px/1.4 var(--mono);
+  font: 500 12px/1.4 var(--mono);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--amber);
@@ -1312,6 +1370,7 @@ main {
 }
 
 .thought {
+  touch-action: manipulation; /* not draggable: never block scrolling */
   padding: 0;
   font: inherit;
   font-size: 13px;
@@ -1431,14 +1490,15 @@ main {
   }
 }
 
-@media (max-width: 720px) {
-  /* On phones the intro text sits over the portrait; darken behind it until it fades. */
+@media (max-aspect-ratio: 5/4) {
+  /* On portrait-shaped screens (phones, upright tablets) the intro text sits over the
+     portrait; darken behind it until it fades. */
   .captions::before {
     content: '';
     position: absolute;
     inset: auto 0 0 0;
-    height: 50%;
-    background: linear-gradient(rgba(7, 8, 12, 0), rgba(7, 8, 12, 0.85) 60%);
+    height: 62%;
+    background: linear-gradient(rgba(7, 8, 12, 0), rgba(7, 8, 12, 0.88) 55%);
     opacity: clamp(0, calc(1 - var(--hero, 0) * 8), 1);
   }
 }

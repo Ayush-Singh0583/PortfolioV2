@@ -16,8 +16,9 @@ function summary(entries) {
   return [projects && plural(projects, 'project'), milestones && plural(milestones, 'milestone')].filter(Boolean).join(' · ') || 'Nothing yet'
 }
 
-// One project or milestone. In the deck every card is the same size: header and text at
-// the top, a footer (language bar, stack, links) pinned to the bottom, and a large faint
+// One project or milestone. In the deck, every card in a year is the same size (see
+// useCardSizes): header at the top, the body (description, bullets or quick facts) in the
+// middle, a footer (language bar, stack, links) pinned to the bottom, and a large faint
 // number in the corner so lighter cards don't look empty.
 function Entry({ entry, inDeck, number }) {
   return (
@@ -36,30 +37,32 @@ function Entry({ entry, inDeck, number }) {
           <time dateTime={entry.date}>{entry.label ?? formatDate(entry.date)}</time>
         </p>
         <h4>{entry.title}</h4>
-        <p className="entry-text">{entry.description}</p>
-        {entry.highlights && (
-          <ul className="highlights">
-            {entry.highlights.map((h) => (
-              <li key={h}>{h}</li>
-            ))}
-          </ul>
-        )}
-        {inDeck && !entry.highlights && entry.updated && (
-          <dl className="facts">
-            <div>
-              <dt>Started</dt>
-              <dd>{formatDate(entry.date)}</dd>
-            </div>
-            <div>
-              <dt>Last update</dt>
-              <dd>{formatDate(entry.updated)}</dd>
-            </div>
-            <div>
-              <dt>Languages</dt>
-              <dd>{entry.languages.length}</dd>
-            </div>
-          </dl>
-        )}
+        <div className="card-body">
+          <p className="entry-text">{entry.description}</p>
+          {entry.highlights && (
+            <ul className="highlights">
+              {entry.highlights.map((h) => (
+                <li key={h}>{h}</li>
+              ))}
+            </ul>
+          )}
+          {inDeck && !entry.highlights && entry.updated && (
+            <dl className="facts">
+              <div>
+                <dt>Started</dt>
+                <dd>{formatDate(entry.date)}</dd>
+              </div>
+              <div>
+                <dt>Last update</dt>
+                <dd>{formatDate(entry.updated)}</dd>
+              </div>
+              <div>
+                <dt>Languages</dt>
+                <dd>{entry.languages.length}</dd>
+              </div>
+            </dl>
+          )}
+        </div>
         <div className="card-foot">
           {entry.languages?.length > 0 && (
             <div className="langbar" aria-hidden="true">
@@ -301,6 +304,49 @@ function stackNodes(timeline) {
 // on the last card before the next year).
 const landSpan = (chapter, vh) => Math.max(1, chapter.offsetHeight - vh * 1.25)
 
+// Every card in a deck is as tall as the tallest one in it (measured from the real
+// content), so the pile lines up and no text is cut off. If that is more than the screen
+// can show, the cards are capped and only their body scrolls.
+function useCardSizes(root, enabled) {
+  useEffect(() => {
+    if (!enabled) return
+    const decks = [...root.current.querySelectorAll('.deck')]
+    let raf = 0
+    const measure = () => {
+      raf = 0
+      const compact = window.innerWidth <= 900
+      for (const deck of decks) {
+        const cards = [...deck.querySelectorAll('.entry-card')]
+        if (!cards.length) continue
+        for (const card of cards) card.style.height = 'auto'
+        const need = Math.max(...cards.map((card) => card.offsetHeight))
+        for (const card of cards) card.style.height = ''
+        // Room left in the pinned stage: below the top bar, with space for the pile's edges.
+        const room = compact ? deck.parentElement.clientHeight - deck.offsetTop - 24 : window.innerHeight - 176
+        deck.style.setProperty('--card-h', `${Math.max(240, Math.min(need, room))}px`)
+        for (const card of cards) {
+          const body = card.querySelector('.card-body')
+          const over = body.scrollHeight > body.clientHeight + 1
+          card.classList.toggle('overflowing', over)
+          // Let the mouse wheel scroll the body instead of the page while over it.
+          body.toggleAttribute('data-lenis-prevent', over)
+        }
+      }
+    }
+    const schedule = () => (raf ||= requestAnimationFrame(measure))
+    const resize = new ResizeObserver(schedule)
+    resize.observe(root.current)
+    window.addEventListener('resize', schedule)
+    document.fonts?.ready.then(schedule) // text reflows once the web fonts arrive
+    schedule()
+    return () => {
+      cancelAnimationFrame(raf)
+      resize.disconnect()
+      window.removeEventListener('resize', schedule)
+    }
+  }, [root, enabled])
+}
+
 // The stacked layout: as you scroll through a year, each card slides up and lands on the
 // one before; earlier cards shrink back and darken. The year's list of titles marks the
 // card on top, and clicking a title scrolls to its card.
@@ -311,6 +357,7 @@ function useStack(root, enabled) {
       el,
       cards: [...el.querySelectorAll('.deck-card')],
       items: [...el.querySelectorAll('.chapter-index li')],
+      buttons: [...el.querySelectorAll('.chapter-index button')],
       active: -1,
     }))
     let raf = 0
@@ -343,14 +390,14 @@ function useStack(root, enabled) {
     }
     const onScroll = () => (raf ||= requestAnimationFrame(update))
     const jumps = chapters.flatMap((c) =>
-      c.items.map((li, k) => {
+      c.buttons.map((button, k) => {
         const go = () => {
           const n = c.cards.length
           const top = c.el.getBoundingClientRect().top + window.scrollY
           scrollToY(top + (n > 1 ? (k / (n - 1)) * landSpan(c.el, window.innerHeight) : 0) + 2)
         }
-        li.addEventListener('click', go)
-        return () => li.removeEventListener('click', go)
+        button.addEventListener('click', go)
+        return () => button.removeEventListener('click', go)
       }),
     )
     update()
@@ -383,6 +430,7 @@ export default function Timeline() {
   const root = useRef()
   useWave(root, STACKED)
   useStack(root, STACKED)
+  useCardSizes(root, STACKED)
 
   useEffect(() => {
     // Fade things in as they scroll into view (once).
@@ -439,7 +487,9 @@ export default function Timeline() {
                   {y.entries.length > 1 && (
                     <ol className="chapter-index">
                       {y.entries.map((e) => (
-                        <li key={e.title}>{e.title}</li>
+                        <li key={e.title}>
+                          <button type="button">{e.title}</button>
+                        </li>
                       ))}
                     </ol>
                   )}

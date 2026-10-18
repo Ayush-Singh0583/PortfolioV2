@@ -1,6 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="4" y="8" width="56" height="52" rx="12" fill="#a8411f"/>
-  <rect x="4" y="4" width="56" height="48" rx="12" fill="#e5603b"/>
-  <rect x="11" y="9" width="42" height="36" rx="8" fill="#ef7650"/>
-  <text x="32" y="34" text-anchor="middle" font-family="ui-monospace, monospace" font-size="18" font-weight="700" fill="#fff1e4">AS</text>
+  <defs>
+    <radialGradient id="film" cx="50%" cy="50%" r="50%">
+      <stop offset="52%" stop-color="#ffb15c" stop-opacity="0.12"/>
+      <stop offset="86%" stop-color="#ffb15c" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.9"/>
+    </radialGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="#0d0f15"/>
+  <circle cx="32" cy="32" r="30" fill="url(#film)"/>
+  <ellipse cx="21" cy="18" rx="7" ry="4" fill="#ffffff" opacity="0.7" transform="rotate(-32 21 18)"/>
+  <text x="32" y="40" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="21" font-weight="700" fill="#f7f2e8">AS</text>
 </svg>

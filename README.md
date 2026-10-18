@@ -6,7 +6,7 @@ A dark, scroll-driven portfolio.
 2. **About:** summary, education and skills, taken from my résumé.
 3. **Journey:** a timeline of my progress year by year, from day one of college to now. It combines milestones, every project on my GitHub, and résumé details for the featured ones.
 4. **Beyond the code:** leadership and certifications.
-5. **Contact:** "Let's work together", a contact form, and a panel of thought bubbles beside it: conversation starters to click, the visitor's words floating up as they type, and a pop when they send. Plus links. The form opens the visitor's email app by default; set `contact.endpoint` (Formspree or Web3Forms) to receive messages directly. An optional résumé download is switched on with `profile.resume`.
+5. **Contact:** "Let's work together", a contact form, and a panel of thought bubbles beside it: conversation starters to click, the visitor's words floating up as they type, and a pop when they send. Plus links. The form opens the visitor's email app by default; set `contact.endpoint` (Formspree or Web3Forms) to receive messages directly. An optional résumé download is switched on with `profile.resume` (everything in `public/` is published, so only put a version without personal details there).
 
 Built with Vite, React, React Three Fiber (Three.js) and Lenis for smooth scrolling.
 
@@ -57,10 +57,10 @@ python scripts/make-portrait.py path/to/picture.png --cut 418
 - `src/three/Experience.jsx` holds the canvas, lights, dark backdrop and post-processing. Rendering stops once the portrait has scrolled away (after the About section on wide screens).
 - `src/three/Portrait.jsx` handles the cutout: the lid, the glowing opening and light beam, and the face rig. The face rig is a shader that repaints the eyes (iris follows the pointer, blinking) and adds the expression (brows lift, eyes widen, mouth corners lift, blush).
 - `src/three/Mind.jsx` holds the head-opening timing, glow and rising specks.
-- `src/ui/Bubbles.jsx` holds the trait bubbles: HTML over the canvas, using the shared physics (rise from the head, collisions, cursor push, drag and fling, pop).
+- `src/ui/Bubbles.jsx` holds the trait bubbles: HTML over the canvas, using the shared physics (rise from the head, collisions, knocked aside by a quick sweep of the mouse but still when you approach slowly, drag and fling, pop).
 - `src/three/frame.js` sets the widest the intro framing ever gets (the portrait can be bigger, never smaller). `src/three/CameraRig.jsx` sets the camera path: a close first view, easing out to that frame, then a pan so the portrait sits beside the About text.
 - `src/ui/Contact.jsx` holds the contact section: the form (mailto fallback, optional endpoint, honeypot) and the thought-bubble panel. `src/lib/bubblePhysics.js` is the bubble physics shared with the intro.
-- `src/ui/About.jsx` contains the About and "Beyond the code" sections. `src/ui/Timeline.jsx` is the journey section. Each year pins in place while its project cards slide in and stack up like a deck, beside the year's title and list of projects, on alternating sides of a meandering line. The line behaves like a string: it ripples when you scroll or sweep the mouse across it, and fills down to a glowing tip. Set `journey.layout: 'list'` in `content.js` for a plain scrolling column instead. `src/ui/Overlay.jsx` has the captions, top bar and closing section.
+- `src/ui/About.jsx` contains the About and "Beyond the code" sections. `src/ui/Timeline.jsx` is the journey section. Each year pins in place while its project cards slide in and stack up like a deck, beside the year's title and list of projects, on alternating sides of a meandering line. Every card in a deck is as tall as the tallest one (measured from its content), so nothing is cut off; on screens too short for that, only the card's middle scrolls. The line behaves like a string: it ripples when you scroll or sweep the mouse across it, and fills down to a glowing tip. Set `journey.layout: 'list'` in `content.js` for a plain scrolling column instead. `src/ui/Overlay.jsx` has the intro captions and the top bar.
 
 The build uses relative paths (`base: './'`), so the `dist/` folder works on Vercel, Netlify or GitHub Pages without changes.
 # PortfolioV2

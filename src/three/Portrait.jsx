@@ -114,7 +114,7 @@ function layoutFromMeta() {
     hinge,
     cut,
     radius: ((meta.cutRight - meta.cutLeft) / 2) * s,
-    // Keycaps start just behind the face, so they appear to rise out of the opening.
+    // The face, at eye level: the camera frames the intro around it.
     head: { center: new THREE.Vector3(0, at(0, meta.eyes).y, -0.04), cutY: cut.y, hinge },
   }
 }

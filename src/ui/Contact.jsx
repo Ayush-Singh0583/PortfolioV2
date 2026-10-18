@@ -113,6 +113,7 @@ function Thoughts({ api, onTopic }) {
     const visibility = new IntersectionObserver(([entry]) => {
       cancelAnimationFrame(raf)
       last = 0
+      pointer.px = -1e4 // no stale "sweep" when it starts again
       if (entry.isIntersecting) raf = requestAnimationFrame(frame)
     })
     visibility.observe(panel.current)
@@ -146,7 +147,14 @@ function Thoughts({ api, onTopic }) {
               <span>{item.text}</span>
             </button>
           ) : (
-            <div key={item.id} ref={register(item)} className={`bubble shown thought ${item.kind}`} style={{ '--tint': TINTS[(i + 2) % TINTS.length] }}>
+            // The visitor's own words echoed back: decorative, so hidden from screen readers.
+            <div
+              key={item.id}
+              ref={register(item)}
+              className={`bubble shown thought ${item.kind}`}
+              style={{ '--tint': TINTS[(i + 2) % TINTS.length] }}
+              aria-hidden="true"
+            >
               <span>{item.text}</span>
             </div>
           ),

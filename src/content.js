@@ -5,8 +5,9 @@ export const profile = {
   tagline: 'I build products end to end, with an ML streak.',
   role: 'Information Science & Engineering · RVITM, Bengaluru',
   availability: 'Open to a 6-month internship · Jan–Jun 2027',
-  // A PDF in /public to offer as a download, e.g. 'Ayush_Singh_Resume.pdf'. Off for now:
-  // the current PDF has your phone number and USN, so it's kept local (see .gitignore).
+  // A résumé PDF to offer as a download: put it in /public and name it here, e.g.
+  // 'Ayush_Singh_Resume.pdf'. Off for now, because the current one has your phone number
+  // and USN. Everything in /public is published, so only use a version without them.
   resume: null,
   links: [
     { label: 'GitHub', url: 'https://github.com/Ayush-Singh0583' },
@@ -172,6 +173,10 @@ export const journey = {
     },
     'CPU-Cache-Simulator': { title: 'CPU Cache Simulator (first version)' },
     Portfolio: { title: 'Portfolio V1' },
+    PortfolioV2: {
+      title: 'Portfolio V2 (this site)',
+      description: 'The site you are on: a 3D intro where my head opens and my traits float out as bubbles, then my journey year by year. Built with React, Three.js and plenty of overthinking.',
+    },
     'Evoting-System': { title: 'E-Voting System', description: 'A remote, decentralised and location-independent way to vote.' },
   },
 }
