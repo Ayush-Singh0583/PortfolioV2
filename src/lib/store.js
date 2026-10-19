@@ -4,7 +4,7 @@ import { clamp } from './math.js'
 
 // Raw scroll state, written by the scroll listener. For each section: `<name>` is 0..1
 // progress through it, `<name>In` is 0..1 as its top edge travels up the viewport.
-export const scroll = { hero: 0, about: 0, aboutIn: 0, journey: 0, journeyIn: 0 }
+export const scroll = { hero: 0, about: 0, aboutIn: 0, work: 0, workIn: 0, journey: 0, journeyIn: 0 }
 
 // Below this width the About section has no room for the portrait beside it.
 export const isCompact = () => window.innerWidth <= 900
@@ -18,7 +18,7 @@ export const world = {
 }
 
 // Small subscribable store for the bits of UI that need React re-renders.
-let ui = { ready: false, sceneVisible: true }
+let ui = { ready: false, sceneVisible: true, introOn: true }
 const listeners = new Set()
 export const uiStore = {
   get: () => ui,
@@ -83,13 +83,27 @@ const EASES = {
   out: (t) => 1 - (1 - t) ** 3,
   inOut: (t) => (t < 0.5 ? 4 * t ** 3 : 1 - (2 - 2 * t) ** 3 / 2),
 }
-export function glideTo(y, { ease = 'out' } = {}) {
+// `done(arrived)` runs when the glide ends: true if it got there, false if something else
+// took over (another glide, a wheel, a finger, the keyboard).
+let finish = null
+const end = (arrived) => {
+  gliding = false
+  const f = finish
+  finish = null
+  f?.(arrived)
+}
+export function stopGlide() {
   cancelAnimationFrame(glide)
+  if (gliding || finish) end(false)
+}
+export function glideTo(y, { ease = 'out', done } = {}) {
+  stopGlide()
+  finish = done ?? null
   const from = window.scrollY
   const distance = Math.abs(y - from)
   if (distance < 1 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    gliding = false
     scrollToY(y, { immediate: true })
+    end(true)
     return
   }
   const ms = ease === 'inOut' ? Math.min(1100, 480 + distance * 0.1) : Math.min(900, 350 + distance * 0.12)
@@ -98,12 +112,12 @@ export function glideTo(y, { ease = 'out' } = {}) {
   let expected = from
   gliding = true
   const frame = (now) => {
-    if (Math.abs(window.scrollY - expected) > 2) return (gliding = false) // someone else scrolled
+    if (Math.abs(window.scrollY - expected) > 2) return end(false) // someone else scrolled
     const t = Math.min(1, (now - start) / ms)
     expected = from + (y - from) * curve(t)
     scrollToY(expected, { immediate: true })
     if (t < 1) glide = requestAnimationFrame(frame)
-    else gliding = false
+    else end(true)
   }
   glide = requestAnimationFrame(frame)
 }
@@ -118,7 +132,7 @@ export const scrollAim = () => lenis?.targetScroll ?? window.scrollY
 const enteredOf = (el) => clamp(1 - el.getBoundingClientRect().top / stableH)
 
 // Smooth scrolling plus section progress. Progress is also exposed as CSS variables
-// (--hero, --about-in, --journey, --journey-in…) so overlays can animate with plain CSS.
+// (--hero, --about-in, --work-in, --journey…) so overlays can animate with plain CSS.
 export function startScroll(sections) {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   lenis = new Lenis({ lerp: reduced ? 1 : 0.09, anchors: true })
@@ -135,8 +149,10 @@ export function startScroll(sections) {
       style.setProperty(`--${key}-in`, scroll[`${key}In`].toFixed(4))
     }
     // The 3D scene stays while the portrait is on screen: through the About section on
-    // wide screens, only the intro on narrow ones. It stops rendering once faded out.
-    uiStore.set({ sceneVisible: isCompact() ? scroll.aboutIn < 0.5 : scroll.journeyIn < 0.6 })
+    // wide screens (it fades as Selected work comes in), only the intro on narrow ones. It
+    // stops rendering once faded out. introOn: the first screen's text (and its buttons) is
+    // still showing.
+    uiStore.set({ sceneVisible: isCompact() ? scroll.aboutIn < 0.5 : scroll.workIn < 0.6, introOn: scroll.hero < 0.1 })
   }
   lenis.on('scroll', update)
   window.addEventListener('scroll', update, { passive: true })

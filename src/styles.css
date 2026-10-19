@@ -111,10 +111,10 @@ dd {
 /* The portrait, softly blurred, with a blue glow, over the sky. It fades in exactly where
    the 3D portrait stands at the end of the About section (centred at 75vw, full portrait
    155vh tall; the file has a blur margin, hence the slightly larger box), so one dissolves
-   into the other, then glides to the centre of the screen as the journey scrolls up. */
+   into the other, then glides to the centre of the screen as Selected work scrolls up. */
 .backdrop {
-  --reveal: clamp(0, calc((var(--journey-in, 0) - 0.1) * 2.5), 1);
-  --glide: clamp(0, calc((var(--journey-in, 0) - 0.45) * 2.2), 1); /* 0 = right, 1 = centre */
+  --reveal: clamp(0, calc((var(--work-in, 0) - 0.1) * 2.5), 1);
+  --glide: clamp(0, calc((var(--work-in, 0) - 0.45) * 2.2), 1); /* 0 = right, 1 = centre */
   z-index: 0;
   overflow: hidden;
   background: radial-gradient(ellipse 60% 70% at calc(72% - 22% * var(--glide)) 50%, rgba(28, 33, 64, 0.55) 0%, rgba(14, 16, 32, 0.3) 45%, rgba(5, 6, 11, 0) 80%);
@@ -132,8 +132,8 @@ dd {
 
 .stage {
   z-index: 0;
-  /* The portrait stays beside the About text, then fades as the journey scrolls in. */
-  opacity: calc(1 - clamp(0, (var(--journey-in, 0) - 0.1) * 2.5, 1));
+  /* The portrait stays beside the About text, then fades as Selected work scrolls in. */
+  opacity: calc(1 - clamp(0, (var(--work-in, 0) - 0.1) * 2.5, 1));
 }
 
 @media (max-width: 900px) {
@@ -247,6 +247,50 @@ main {
   border-radius: 50%;
   background: #6fdc94;
   box-shadow: 0 0 8px #6fdc94;
+}
+
+/* The first screen's calls to action: the work (primary) and, once there is one, the résumé. */
+.intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+  pointer-events: auto;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 12px 20px;
+  font: 600 16px/1.2 var(--display);
+  color: var(--ink);
+  text-shadow: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(7, 8, 12, 0.6);
+  transition:
+    background-color var(--motion-150) ease-out,
+    border-color var(--motion-150) ease-out,
+    color var(--motion-150) ease-out;
+}
+
+.button:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.button-primary,
+.button-primary:hover {
+  color: #1a1206;
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+.button-primary:hover {
+  background: #ffc27f;
+  border-color: #ffc27f;
 }
 
 .scroll-hint {
@@ -479,6 +523,7 @@ main {
 }
 
 .journey-inner,
+.work-inner,
 .contact-inner,
 .about-inner,
 .highlights-inner {
@@ -599,6 +644,90 @@ main {
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.02);
+}
+
+/* ---------- selected work: three projects first, ahead of the journey ---------- */
+
+.work {
+  padding: 12vh var(--gutter) 4vh;
+}
+
+.work-inner h2 {
+  font: 600 clamp(32px, 4.5vw, 56px) / 1.1 var(--display);
+  letter-spacing: -0.03em;
+}
+
+.work-lead {
+  max-width: 62ch;
+  margin-top: 16px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--body);
+}
+
+.work-lead a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 177, 92, 0.5);
+  text-underline-offset: 3px;
+}
+
+/* Side by side and the same height, each card's footer pinned to its bottom. */
+.work-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin: 40px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.work-card .entry-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-color: rgba(255, 177, 92, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 177, 92, 0.05), rgba(255, 177, 92, 0) 45%),
+    var(--panel);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.work-card .entry-card > :not(.card-number) {
+  position: relative;
+}
+
+.work-card h3 {
+  margin-top: 12px;
+  font: 600 22px/1.2 var(--display);
+  letter-spacing: -0.01em;
+}
+
+.work-card .card-foot {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.work-card .langbar {
+  margin-top: 0;
+}
+
+/* Everything here is featured already. */
+.work-card .badge-featured {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  /* One under another, still all the same height. */
+  .work-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: 1fr;
+    max-width: 640px;
+  }
 }
 
 /* ---------- journey timeline ---------- */
@@ -1156,9 +1285,9 @@ main {
     margin: 44px 0 0; /* room for the pile's edges below the heading */
   }
 
-  /* Keep cards short enough to fit on a phone screen. */
-  .chapter-index,
-  .deck .highlights {
+  /* The stack's list of titles has no room on a phone. (Featured cards keep their result
+     bullets: a card too tall for the screen scrolls inside instead.) */
+  .chapter-index {
     display: none;
   }
 }
@@ -1218,7 +1347,7 @@ main {
 }
 
 .ring .deck-card {
-  top: 50%;
+  top: calc(50% - var(--skip-room, 0px) / 2);
   left: 50%;
   right: auto;
   width: var(--card-w);
@@ -1324,6 +1453,39 @@ main {
 .ring-arrow:hover {
   border-color: var(--amber);
   color: var(--amber);
+}
+
+/* Under the card in front: up to the year before, down to the next, skipping the rest of
+   this year's cards (see skip() in Timeline.jsx). The cards move up by half the row's room so
+   the card and the row are centred together. */
+.ring.skippable .ring-wrap {
+  --skip-room: 64px;
+}
+
+.ring-skips {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - var(--skip-room) / 2 + var(--card-h) / 2 + 16px);
+  z-index: 300; /* over the cards */
+  display: flex;
+  gap: 12px;
+  transform: translateX(-50%);
+}
+
+.ring-skip {
+  padding: 10px 16px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.ring-skip svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* Where a dot or arrow leads (on hover, or keyboard focus), just under the controls. */

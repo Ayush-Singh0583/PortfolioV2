@@ -107,6 +107,9 @@ export const journey = {
   // 'stack': each year pins in place while its cards slide in and stack up like a deck.
   // 'list': each year's cards scroll past in a column.
   layout: 'ring',
+  // The three projects shown first, in "Selected work" after the About section (repo names, or
+  // an extra project's title), in this order. They stay in the journey too.
+  selected: ['ML-Network-Intrusion-Detection-System', 'CacheSimulatorV2-c-17-', 'Secure Banking Transaction API'],
   // GitHub accounts whose public repos appear on the timeline (fetched at build time).
   githubAccounts: ['Ayush-Singh0583', 'AyushDevJourney'],
   // First day of 1st year. Academic years are counted from this date.
@@ -133,8 +136,11 @@ export const journey = {
       ],
     },
   ],
-  // Repos to leave off the timeline (profile pages, empty repos).
-  hideRepos: ['Ayush-Singh0583', 'campus', 'AyushDevJourney', 'Start'],
+  // Repos to leave off the timeline (profile pages, empty or thin repos).
+  // CPU-Cache-Simulator has no commits yet (CacheSimulatorV2 is the real one) and AcadsphereV2
+  // only a README: take them out of this list once their code is pushed. smart-todo-pro and
+  // Portfolio (V1) are left out so the timeline shows the stronger work.
+  hideRepos: ['Ayush-Singh0583', 'campus', 'AyushDevJourney', 'Start', 'CPU-Cache-Simulator', 'AcadsphereV2', 'smart-todo-pro', 'Portfolio'],
   // Nicer titles, descriptions, tech stacks and highlights for specific repos (keyed by repo name).
   // `featured` projects get a highlighted card. `date` / `label` override GitHub's creation
   // date, for projects uploaded long after they were built.
@@ -170,6 +176,9 @@ export const journey = {
       stack: ['React', 'Vite', 'CSS', 'LocalStorage'],
     },
     'Habit-tracker': {
+      // Its Vercel deployment is gone (DEPLOYMENT_NOT_FOUND), so no "Visit site" link for now.
+      // Delete this line after redeploying it.
+      homepage: null,
       title: 'Habitual: Habit Tracker',
       description: 'A full-stack MERN habit tracker with streaks, analytics charts and a heatmap, and JWT sign-in with access and refresh tokens.',
       stack: ['React', 'Tailwind CSS', 'Chart.js', 'Node.js', 'Express.js', 'MongoDB', 'JWT'],
@@ -204,6 +213,9 @@ export const journey = {
       ],
     },
     Focus: {
+      // Its Vercel deployment is gone (DEPLOYMENT_NOT_FOUND), so no "Visit site" link for now.
+      // Delete this line after redeploying it.
+      homepage: null,
       title: 'Focus: Full-Stack Productivity Platform',
       featured: true,
       description: 'Task management, time tracking and usage analytics, with a Node.js/Express and MongoDB backend and a React front end.',
@@ -234,6 +246,10 @@ export const journey = {
       title: 'Portfolio V2 (this site)',
       description: 'The site you are on: a 3D intro where my traits appear out of my head as bubbles, then my journey year by year. Built with React, Three.js and plenty of overthinking.',
     },
-    'Evoting-System': { title: 'Blockchain E-Voting System', description: 'A blockchain-based e-voting system: a remote, decentralised and location-independent way to vote.' },
+    'Evoting-System': {
+      // A team project ("VoteChain"); his part is from his GitHub profile README.
+      title: 'VoteChain: Blockchain E-Voting (team)',
+      description: 'A team blockchain e-voting system: remote, decentralised and location-independent. My part: face authentication for voters, and zero-knowledge proofs.',
+    },
   },
 }

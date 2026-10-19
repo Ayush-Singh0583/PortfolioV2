@@ -56,13 +56,14 @@ const projects = github.repos
     const languages = topLanguages(r.languages)
     return {
       kind: 'project',
+      key: r.name,
       date: o.date ?? r.created_at,
       label: o.label,
       title: o.title ?? prettify(r.name),
       description: o.description ?? (r.description?.trim() || `A ${languages[0]?.name ?? 'side'} project.`),
       languages,
       url: r.url,
-      homepage: r.homepage,
+      homepage: 'homepage' in o ? o.homepage : r.homepage, // an override of null hides a dead demo link
       updated: r.pushed_at,
       featured: o.featured ?? false,
       status: o.status,
@@ -70,7 +71,10 @@ const projects = github.repos
       highlights: o.highlights,
     }
   })
-  .concat(journey.extraProjects.map((p) => ({ kind: 'project', languages: [], ...p })))
+  .concat(journey.extraProjects.map((p) => ({ kind: 'project', key: p.title, languages: [], ...p })))
+
+// The projects shown first, in "Selected work" (journey.selected in content.js).
+export const selectedWork = (journey.selected ?? []).map((key) => projects.find((p) => p.key === key)).filter(Boolean)
 
 // Milestones, plus any résumé highlight that has been given a date.
 const milestones = [

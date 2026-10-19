@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { about } from '../content.js'
 
 // Fade children marked .reveal in as they scroll into view (once).
-function useReveal() {
+export function useReveal() {
   const root = useRef()
   useEffect(() => {
     const observer = new IntersectionObserver(

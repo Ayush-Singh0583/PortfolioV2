@@ -5,6 +5,7 @@ import Bubbles from './ui/Bubbles.jsx'
 import Sky from './ui/Sky.jsx'
 import Timeline from './ui/Timeline.jsx'
 import { About, Highlights } from './ui/About.jsx'
+import SelectedWork from './ui/Work.jsx'
 import Contact from './ui/Contact.jsx'
 import { Captions, TopBar } from './ui/Overlay.jsx'
 import { startScroll } from './lib/store.js'
@@ -12,9 +13,10 @@ import { startScroll } from './lib/store.js'
 export default function App() {
   const hero = useRef()
   const about = useRef()
+  const work = useRef()
   const journey = useRef()
 
-  useEffect(() => startScroll({ hero: hero.current, about: about.current, journey: journey.current }), [])
+  useEffect(() => startScroll({ hero: hero.current, about: about.current, work: work.current, journey: journey.current }), [])
 
   return (
     <>
@@ -39,6 +41,9 @@ export default function App() {
         <section ref={hero} className="hero" aria-label="Introduction" />
         <section ref={about} id="about" className="about" aria-label="About">
           <About />
+        </section>
+        <section ref={work} id="work" className="work" aria-label="Selected work">
+          <SelectedWork />
         </section>
         <section ref={journey} id="journey" className="journey" aria-label="Journey">
           <Timeline />

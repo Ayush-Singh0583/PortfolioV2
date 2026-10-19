@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { about, journey } from '../content.js'
 import { formatDate, languageColor, projectCount, years } from '../lib/journey.js'
-import { glideActive, glideTo, isGliding, scrollAim, scrollToY, stableHeight } from '../lib/store.js'
+import { glideActive, glideTo, isGliding, scrollAim, scrollToY, stableHeight, stopGlide } from '../lib/store.js'
 import { clamp, smoothstep } from '../lib/math.js'
 
 // How each year's projects are shown (journey.layout in content.js):
@@ -17,7 +17,7 @@ const RING = LAYOUT === 'ring'
 
 const pad2 = (n) => String(n).padStart(2, '0')
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
+const plural = (n, word) => `${n}\u00a0${word}${n === 1 ? '' : 's'}` // kept on one line
 
 function summary(entries) {
   const projects = entries.filter((e) => e.kind === 'project').length
@@ -25,97 +25,105 @@ function summary(entries) {
   return [projects && plural(projects, 'project'), milestones && plural(milestones, 'milestone')].filter(Boolean).join(' · ') || 'Nothing yet'
 }
 
-// One project or milestone. In the deck, every card in a year is the same size (see
+// One project or milestone card. In the deck, every card in a year is the same size (see
 // useCardSizes): header at the top, the body (description, bullets or quick facts) in the
 // middle, a footer (language bar, stack, links) pinned to the bottom, and a large faint
-// number in the corner so lighter cards don't look empty.
+// number in the corner so lighter cards don't look empty. Also used by "Selected work"
+// (Work.jsx): `number` adds the faint number, `facts` the quick facts on lighter cards, and
+// `heading` sets the title's level.
+export function EntryCard({ entry, number, facts, heading: Heading = 'h4' }) {
+  return (
+    <article className="entry-card">
+      {number > 0 && (
+        <span className="card-number" aria-hidden="true">
+          {pad2(number)}
+        </span>
+      )}
+      <p className="entry-meta">
+        <span className="badge">{entry.kind === 'project' ? 'Project' : 'Milestone'}</span>
+        {entry.featured && <span className="badge badge-featured">Featured</span>}
+        {entry.status && <span className="badge badge-status">{entry.status}</span>}
+        <time dateTime={entry.date}>{entry.label ?? formatDate(entry.date)}</time>
+      </p>
+      <Heading>{entry.title}</Heading>
+      <div className="card-body">
+        <p className="entry-text">{entry.description}</p>
+        {entry.highlights && (
+          <ul className="highlights">
+            {entry.highlights.map((h) => (
+              <li key={h}>{h}</li>
+            ))}
+          </ul>
+        )}
+        {facts && !entry.highlights && entry.updated && (
+          <dl className="facts">
+            <div>
+              <dt>Started</dt>
+              <dd>{entry.label ?? formatDate(entry.date)}</dd>
+            </div>
+            <div>
+              <dt>Updated</dt>
+              <dd>{formatDate(entry.updated)}</dd>
+            </div>
+            {entry.languages.length > 0 && (
+              <div>
+                <dt>Languages</dt>
+                <dd>{entry.languages.length}</dd>
+              </div>
+            )}
+          </dl>
+        )}
+      </div>
+      <div className="card-foot">
+        {entry.languages?.length > 0 && (
+          <div className="langbar" aria-hidden="true">
+            {entry.languages.map((l) => (
+              <span key={l.name} style={{ flexGrow: l.share, background: languageColor(l.name) }} />
+            ))}
+          </div>
+        )}
+        {entry.stack ? (
+          <ul className="stack" aria-label="Tech stack">
+            {entry.stack.map((s) => (
+              <li key={s}>{s}</li>
+            ))}
+          </ul>
+        ) : (
+          entry.languages?.length > 0 && (
+            <ul className="langs" aria-label="Languages">
+              {entry.languages.map((l) => (
+                <li key={l.name}>
+                  <span className="dot" style={{ background: languageColor(l.name) }} />
+                  {l.name} <em>{l.share}%</em>
+                </li>
+              ))}
+            </ul>
+          )
+        )}
+        {(entry.url || entry.homepage) && (
+          <div className="entry-links">
+            {entry.url && (
+              <a href={entry.url} target="_blank" rel="noreferrer">
+                View code ↗
+              </a>
+            )}
+            {entry.homepage && (
+              <a href={entry.homepage} target="_blank" rel="noreferrer">
+                Visit site ↗
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </article>
+  )
+}
+
 function Entry({ entry, inDeck, number }) {
   return (
     <li className={`entry entry-${entry.kind}${entry.featured ? ' entry-featured' : ''}${inDeck ? ' deck-card' : ' reveal'}`}>
       {!inDeck && <span className="node" aria-hidden="true" />}
-      <article className="entry-card">
-        {inDeck && (
-          <span className="card-number" aria-hidden="true">
-            {String(number).padStart(2, '0')}
-          </span>
-        )}
-        <p className="entry-meta">
-          <span className="badge">{entry.kind === 'project' ? 'Project' : 'Milestone'}</span>
-          {entry.featured && <span className="badge badge-featured">Featured</span>}
-          {entry.status && <span className="badge badge-status">{entry.status}</span>}
-          <time dateTime={entry.date}>{entry.label ?? formatDate(entry.date)}</time>
-        </p>
-        <h4>{entry.title}</h4>
-        <div className="card-body">
-          <p className="entry-text">{entry.description}</p>
-          {entry.highlights && (
-            <ul className="highlights">
-              {entry.highlights.map((h) => (
-                <li key={h}>{h}</li>
-              ))}
-            </ul>
-          )}
-          {inDeck && !entry.highlights && entry.updated && (
-            <dl className="facts">
-              <div>
-                <dt>Started</dt>
-                <dd>{entry.label ?? formatDate(entry.date)}</dd>
-              </div>
-              <div>
-                <dt>Updated</dt>
-                <dd>{formatDate(entry.updated)}</dd>
-              </div>
-              {entry.languages.length > 0 && (
-                <div>
-                  <dt>Languages</dt>
-                  <dd>{entry.languages.length}</dd>
-                </div>
-              )}
-            </dl>
-          )}
-        </div>
-        <div className="card-foot">
-          {entry.languages?.length > 0 && (
-            <div className="langbar" aria-hidden="true">
-              {entry.languages.map((l) => (
-                <span key={l.name} style={{ flexGrow: l.share, background: languageColor(l.name) }} />
-              ))}
-            </div>
-          )}
-          {entry.stack ? (
-            <ul className="stack" aria-label="Tech stack">
-              {entry.stack.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ul>
-          ) : (
-            entry.languages?.length > 0 && (
-              <ul className="langs" aria-label="Languages">
-                {entry.languages.map((l) => (
-                  <li key={l.name}>
-                    <span className="dot" style={{ background: languageColor(l.name) }} />
-                    {l.name} <em>{l.share}%</em>
-                  </li>
-                ))}
-              </ul>
-            )
-          )}
-          {(entry.url || entry.homepage) && (
-            <div className="entry-links">
-              {entry.url && (
-                <a href={entry.url} target="_blank" rel="noreferrer">
-                  View code ↗
-                </a>
-              )}
-              {entry.homepage && (
-                <a href={entry.homepage} target="_blank" rel="noreferrer">
-                  Visit site ↗
-                </a>
-              )}
-            </div>
-          )}
-        </div>
-      </article>
+      <EntryCard entry={entry} number={inDeck ? number : 0} facts={inDeck} />
     </li>
   )
 }
@@ -337,11 +345,13 @@ function useCardSizes(root, enabled) {
         // the year heading), less room for the focus border and shadow. Stack: below the top
         // bar, with space for the pile's edges.
         const room = deck.closest('.ring')
-          ? deck.clientHeight - 16
+          ? deck.clientHeight - 16 - (parseFloat(getComputedStyle(deck).getPropertyValue('--skip-room')) || 0)
           : compact
             ? deck.parentElement.clientHeight - deck.offsetTop - 24
             : window.innerHeight - 176
-        deck.style.setProperty('--card-h', `${Math.max(240, Math.min(need, room))}px`)
+        const h = `${Math.max(240, Math.min(need, room))}px`
+        deck.style.setProperty('--card-h', h)
+        deck.closest('.ring-wrap')?.style.setProperty('--card-h', h) // the row under the card needs it too
         for (const card of cards) {
           const body = card.querySelector('.card-body')
           card.classList.toggle('overflowing', body.scrollHeight > body.clientHeight + 1)
@@ -419,7 +429,9 @@ function useStack(root, enabled) {
       cards: [...el.querySelectorAll('.deck-card')],
       items: [...el.querySelectorAll('.chapter-index li, .dial-dot')],
       buttons: [...el.querySelectorAll('.chapter-index button, .dial-dot')],
-      arrows: [...el.querySelectorAll('.ring-arrow')],
+      arrows: [...el.querySelectorAll('.ring-arrow.prev, .ring-arrow.next')],
+      up: el.querySelector('.ring-skip.up'),
+      down: el.querySelector('.ring-skip.down'),
       dial: el.querySelector('.dial'),
       count: el.querySelector('.dial-now'),
       tip: el.querySelector('.ring-tip'),
@@ -430,6 +442,7 @@ function useStack(root, enabled) {
       view: null, // where the row is drawn (slides towards the selected card)
       goal: null, // the card a click, key or snap asked for, while the page glides there
       direct: false, // a drag, sideways scroll or dial spin moves the row directly
+      hold: null, // during a skip between years: the card it keeps showing, whatever the scroll
     }))
     const rings = chapters.filter((c) => c.ring && c.cards.length > 1)
     // Page position at which a chapter shows card position q (fractional is fine).
@@ -484,6 +497,43 @@ function useStack(root, enabled) {
       const v = c.goal ?? position(c)
       turnTo(c, Math.round(v + around(k - v, c.cards.length)), 'inOut')
     }
+    // Leave a year for the next (dir 1) or the one before (dir −1) without flicking through the
+    // cards in between. The year keeps showing the card you were on, and the year you're going to
+    // shows its first card all the way in (both held, whatever the scroll says). Within a pinned
+    // year the page can jump without anything visible moving, so it jumps to the edge of the
+    // year, glides one screen across the change of year, then lands on the new year's start.
+    // Past the last year, ↓ goes on to the section after the journey.
+    let skipping = false
+    const skip = (c, dir) => {
+      stopGlide()
+      const top = (el) => el.getBoundingClientRect().top + window.scrollY
+      // Where a year's stage is last pinned: its end, less the stage's own height.
+      const lastPinned = (ch) => top(ch.el) + ch.el.offsetHeight - ch.el.firstElementChild.offsetHeight
+      const next = chapters[chapters.indexOf(c) + dir]
+      const section = root.current.closest('section')
+      const held = [c, next].filter(Boolean)
+      c.hold = Math.round(c.view ?? position(c))
+      c.goal = null
+      if (next) next.hold = next.view = next.shown // its first card, on its current lap
+      // Jump to where this year's stage starts to move off (its end going down, its start going
+      // up), unless the page is already past it.
+      const edge = dir > 0 ? lastPinned(c) : top(c.el)
+      if (dir > 0 ? window.scrollY < edge : window.scrollY > edge) scrollToY(edge, { immediate: true })
+      // Glide across the change of year: to the next year's start, or going up to where the year
+      // above is last pinned (then a jump, unseen, to its start).
+      const to = next ? (dir > 0 ? top(next.el) + 2 : lastPinned(next)) : top(dir > 0 ? section.nextElementSibling : section)
+      skipping = true
+      onScroll()
+      glideTo(to, {
+        ease: 'inOut',
+        done: (arrived) => {
+          if (arrived && next && dir < 0) scrollToY(top(next.el) + 2, { immediate: true })
+          for (const h of held) h.hold = null
+          skipping = false
+          onScroll()
+        },
+      })
+    }
     // After a drag, swipe or sideways scroll that began at card `from`: once it has moved a
     // little, on to the next card in that direction (further for a long one), so a short flick
     // doesn't spring back. `velocity` (cards per second) carries a quick flick on.
@@ -497,10 +547,10 @@ function useStack(root, enabled) {
     const showTip = (c, el) => {
       if (!c.tip) return
       c.tipFor = el
+      const tag = (name, text) => Object.assign(document.createElement(name), { textContent: text })
       const dot = el.classList.contains('dial-dot')
       const next = el.classList.contains('next')
       const target = dot ? el : c.buttons[mod(c.active + (next ? 1 : -1), c.cards.length)]
-      const tag = (name, text) => Object.assign(document.createElement(name), { textContent: text })
       c.tip.replaceChildren(
         tag('b', dot ? pad2(c.buttons.indexOf(el) + 1) : next ? 'Next' : 'Previous'),
         target.dataset.title,
@@ -539,7 +589,7 @@ function useStack(root, enabled) {
           // rather than after the smooth scroll has caught up.
           const aim = scrollAim()
           const qAim = n > 1 ? clamp((aim - window.scrollY - rect.top) / landSpan(c.el, vh)) * (n - 1) : 0
-          selected = c.goal ?? (c.direct ? Math.round(v) : ahead(qAim + c.shown, Math.sign(aim - window.scrollY) || dirY))
+          selected = c.hold ?? c.goal ?? (c.direct ? Math.round(v) : ahead(qAim + c.shown, Math.sign(aim - window.scrollY) || dirY))
           // The row follows a drag directly; otherwise it slides to the selected card, quickly
           // at first and softly at the end, like focus moving along a row on a TV.
           if (c.view === null || still) c.view = c.direct ? v : selected
@@ -685,6 +735,8 @@ function useStack(root, enabled) {
 
       c.buttons.forEach((button, k) => on(button, 'click', () => goToCard(c, k)))
       c.arrows.forEach((arrow) => on(arrow, 'click', () => step(c, arrow.classList.contains('next') ? 1 : -1)))
+      if (c.up) on(c.up, 'click', () => skip(c, -1))
+      if (c.down) on(c.down, 'click', () => skip(c, 1))
       for (const el of [...c.buttons, ...c.arrows]) {
         on(el, 'pointerenter', (e) => e.pointerType === 'mouse' && showTip(c, el))
         on(el, 'pointerleave', () => hideTip(c))
@@ -822,10 +874,12 @@ function useStack(root, enabled) {
       }
     }
 
-    // ← → turn the year whose controls have focus, or the one pinned on screen (not while
-    // typing in the contact form). Home and End on the dial go to the first and last card.
+    // ← → turn the year whose controls have focus, or the one pinned on screen, and ↓ ↑ move
+    // to the next or previous year (not while typing in the contact form). Home and End on the
+    // dial go to the first and last card.
     on(window, 'keydown', (e) => {
       if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.target.closest?.('input, textarea')) return
+      if (skipping && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) return e.preventDefault()
       const c = rings.find((ch) => ch.el.contains(e.target)) ?? rings.find(pinned)
       if (!c) return
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
@@ -834,6 +888,10 @@ function useStack(root, enabled) {
       } else if ((e.key === 'Home' || e.key === 'End') && e.target.closest?.('.dial')) {
         e.preventDefault()
         goToCard(c, e.key === 'Home' ? 0 : c.cards.length - 1)
+      } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !e.target.closest?.('.card-body')) {
+        // ↓ ↑ move between years, as on a TV; inside a card whose text scrolls they still scroll it.
+        e.preventDefault()
+        if (!skipping) skip(c, e.key === 'ArrowDown' ? 1 : -1)
       }
     })
 
@@ -882,6 +940,9 @@ function Dial({ y }) {
     </div>
   )
 }
+
+// What comes after the journey (the "Beyond the code" section), named on the last year's ⌄.
+const AFTER_JOURNEY = 'Leadership & certifications'
 
 const Chevron = ({ points }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -955,7 +1016,8 @@ export default function Timeline() {
           RING ? (
             <section
               key={y.year}
-              className="chapter ring"
+              id={`year-${y.year}`}
+              className={`chapter ring${y.entries.length > 1 ? ' skippable' : ''}`}
               data-count={y.entries.length}
               style={{ '--count': Math.max(y.entries.length, 1) }}
               aria-label={`${y.title}, ${y.span}`}
@@ -985,6 +1047,22 @@ export default function Timeline() {
                     ))}
                     {y.entries.length === 0 && <li className="year-empty">No public projects from this year yet.</li>}
                   </ol>
+                  {/* Under the card: up to the year before, down to the next (or past the journey),
+                      without going through the rest of this year's cards. */}
+                  {y.entries.length > 1 && (
+                    <div className="ring-skips">
+                      {i > 0 && (
+                        <button type="button" className="button ring-skip up" aria-label={`Go up to ${years[i - 1].title}`}>
+                          <Chevron points="5 15 12 8 19 15" />
+                          {years[i - 1].title}
+                        </button>
+                      )}
+                      <button type="button" className="button ring-skip down" aria-label={`Skip down to ${years[i + 1]?.title ?? AFTER_JOURNEY}`}>
+                        {years[i + 1]?.title ?? 'Leadership'}
+                        <Chevron points="5 9 12 16 19 9" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
