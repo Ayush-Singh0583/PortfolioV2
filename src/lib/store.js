@@ -126,13 +126,15 @@ export function glideTo(y, { ease = 'out', done } = {}) {
 export const isGliding = () => gliding || lenis?.isScrolling === 'smooth'
 // True only while a glideTo is under way (it stops as soon as anything else scrolls).
 export const glideActive = () => gliding
-// Where the page is heading: the target of a smooth wheel scroll, or simply where it is.
-export const scrollAim = () => lenis?.targetScroll ?? window.scrollY
+// Where the page is heading: the target of a smooth wheel scroll while one runs, otherwise
+// simply where it is (Lenis' target can lag behind a jump made some other way).
+export const scrollAim = () => (lenis?.isScrolling === 'smooth' ? lenis.targetScroll : window.scrollY)
 
 const enteredOf = (el) => clamp(1 - el.getBoundingClientRect().top / stableH)
 
 // Smooth scrolling plus section progress. Progress is also exposed as CSS variables
-// (--hero, --about-in, --work-in, --journey…) so overlays can animate with plain CSS.
+// (--hero, --about-in, --work-in, --journey…) on the overlays (.captions, .stage, .backdrop),
+// so they can animate with plain CSS.
 export function startScroll(sections) {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   lenis = new Lenis({ lerp: reduced ? 1 : 0.09, anchors: true })
@@ -140,13 +142,22 @@ export function startScroll(sections) {
     lenis.raf(t)
     raf = requestAnimationFrame(loop)
   })
-  const style = document.documentElement.style
+  // The variables go on the overlays that animate from them, and only when they change: set on
+  // the root, every scroll frame would restyle the whole page (noticeably janky on phones).
+  const targets = [...document.querySelectorAll('.captions, .stage, .backdrop')]
+  const written = {}
+  const put = (name, value) => {
+    const v = value.toFixed(4)
+    if (written[name] === v) return
+    written[name] = v
+    for (const t of targets) t.style.setProperty(name, v)
+  }
   const update = () => {
     for (const key in sections) {
       scroll[key] = progressOf(sections[key])
       scroll[`${key}In`] = enteredOf(sections[key])
-      style.setProperty(`--${key}`, scroll[key].toFixed(4))
-      style.setProperty(`--${key}-in`, scroll[`${key}In`].toFixed(4))
+      put(`--${key}`, scroll[key])
+      put(`--${key}-in`, scroll[`${key}In`])
     }
     // The 3D scene stays while the portrait is on screen: through the About section on
     // wide screens (it fades as Selected work comes in), only the intro on narrow ones. It
@@ -154,7 +165,7 @@ export function startScroll(sections) {
     // still showing.
     uiStore.set({ sceneVisible: isCompact() ? scroll.aboutIn < 0.5 : scroll.workIn < 0.6, introOn: scroll.hero < 0.1 })
   }
-  lenis.on('scroll', update)
+  // Lenis moves the page with window.scrollTo, so the native scroll event covers it too.
   window.addEventListener('scroll', update, { passive: true })
   window.addEventListener('resize', update)
   update()

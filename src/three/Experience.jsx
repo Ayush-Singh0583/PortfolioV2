@@ -1,5 +1,6 @@
-import { Suspense, useRef } from 'react'
+import { Suspense, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
+import { PerformanceMonitor } from '@react-three/drei'
 import { Bloom, EffectComposer, ToneMapping, Vignette } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 import * as THREE from 'three'
@@ -52,6 +53,9 @@ function Backdrop() {
 export default function Experience() {
   const visible = useUI((s) => s.sceneVisible)
   const small = window.innerWidth < 720
+  // Sharpness: drops to 1x if the frame rate falls (slower phones), back up if it recovers.
+  const top = small ? 1.5 : 1.75
+  const [dpr, setDpr] = useState(top)
   return (
     <Canvas
       // Stop rendering once the portrait has scrolled away; the canvas is invisible then.
@@ -59,11 +63,12 @@ export default function Experience() {
       // Listen for the pointer on the whole page, so the eyes follow it over the text too.
       eventSource={document.getElementById('root')}
       eventPrefix="client"
-      dpr={[1, small ? 1.5 : 1.75]}
+      dpr={dpr}
       camera={{ fov: 40, near: 0.05, far: 60, position: [0, 1.4, 2] }}
       gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
       onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
     >
+      <PerformanceMonitor onDecline={() => setDpr(1)} onIncline={() => setDpr(top)} flipflops={3} onFallback={() => setDpr(1)} />
       <Lights />
       <Director />
       <Suspense fallback={null}>

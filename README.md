@@ -74,7 +74,7 @@ python scripts/make-portrait.py path/to/picture.png --cut 418
 
 - Everything works from the keyboard, with a visible amber focus ring. On the journey, each year's dial is one Tab stop: ← → move along the year and ↓ ↑ move to the next or previous year (also whenever a year fills the screen), and Home / End on the dial jump to the first and last card. Only the card in front can be tabbed into.
 - Small buttons and links have a tap area of at least 44px on phones.
-- On phones, vertical swipes always scroll the page (a year doesn't hold on to them) and nothing scrolls inside a card; projects move with sideways swipes, the arrows or the dial.
+- On phones, vertical swipes always scroll the page (a year doesn't hold on to them) and nothing scrolls inside a card; projects move with sideways swipes, the arrows or the dial. A year's cards share one height that fits the screen, and featured cards fold their results behind "Show results".
 - With "reduce motion" switched on in the system settings, nothing moves with the scroll or drifts on its own: the ring turns without zooming, the bubbles appear in place, the sky stays still and sections just fade in.
 
 The build uses relative paths (`base: './'`), so the `dist/` folder works on Vercel, Netlify or GitHub Pages without changes.

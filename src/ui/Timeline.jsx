@@ -29,9 +29,10 @@ function summary(entries) {
 // useCardSizes): header at the top, the body (description, bullets or quick facts) in the
 // middle, a footer (language bar, stack, links) pinned to the bottom, and a large faint
 // number in the corner so lighter cards don't look empty. Also used by "Selected work"
-// (Work.jsx): `number` adds the faint number, `facts` the quick facts on lighter cards, and
-// `heading` sets the title's level.
-export function EntryCard({ entry, number, facts, heading: Heading = 'h4' }) {
+// (Work.jsx): `number` adds the faint number, `facts` the quick facts on lighter cards,
+// `heading` sets the title's level, and `fold` adds "Show results", which on phones folds the
+// result bullets away so a year's cards can share one height that fits the screen.
+export function EntryCard({ entry, number, facts, fold, heading: Heading = 'h4' }) {
   return (
     <article className="entry-card">
       {number > 0 && (
@@ -48,6 +49,12 @@ export function EntryCard({ entry, number, facts, heading: Heading = 'h4' }) {
       <Heading>{entry.title}</Heading>
       <div className="card-body">
         <p className="entry-text">{entry.description}</p>
+        {entry.highlights && fold && (
+          <button type="button" className="results-toggle" aria-expanded="false">
+            <span>Show results</span>
+            <Chevron points="6 9 12 15 18 9" />
+          </button>
+        )}
         {entry.highlights && (
           <ul className="highlights">
             {entry.highlights.map((h) => (
@@ -123,7 +130,7 @@ function Entry({ entry, inDeck, number }) {
   return (
     <li className={`entry entry-${entry.kind}${entry.featured ? ' entry-featured' : ''}${inDeck ? ' deck-card' : ' reveal'}`}>
       {!inDeck && <span className="node" aria-hidden="true" />}
-      <EntryCard entry={entry} number={inDeck ? number : 0} facts={inDeck} />
+      <EntryCard entry={entry} number={inDeck ? number : 0} facts={inDeck} fold={inDeck} />
     </li>
   )
 }
@@ -339,7 +346,8 @@ function useCardSizes(root, enabled) {
         const cards = [...deck.querySelectorAll('.entry-card')]
         if (!cards.length) continue
         for (const card of cards) card.style.height = 'auto'
-        const need = Math.max(...cards.map((card) => card.offsetHeight))
+        // (A card opened with "Show results" grows on its own; it doesn't set the height.)
+        const need = Math.max(0, ...cards.filter((card) => !card.parentElement.classList.contains('expanded')).map((card) => card.offsetHeight))
         for (const card of cards) card.style.height = ''
         // Room left in the pinned stage. Ring: the row's own height (it takes the space below
         // the year heading), less room for the focus border, shadow and the ⌃ ⌄ row; on a phone
@@ -382,7 +390,7 @@ function useCardSizes(root, enabled) {
 // cards further round are only there to be clicked to the front (their links ignore the
 // pointer, see .ring .deck-card in styles.css).
 function setFrontCard(li, front) {
-  for (const a of li.querySelectorAll('a')) a.tabIndex = front ? 0 : -1
+  for (const el of li.querySelectorAll('a, button')) el.tabIndex = front ? 0 : -1
   const body = li.querySelector('.card-body')
   const scrolls = front && li.querySelector('.entry-card').classList.contains('overflowing')
   body.toggleAttribute('data-lenis-prevent', scrolls)
@@ -532,7 +540,7 @@ function useStack(root, enabled) {
       // On a phone the scroll doesn't move the cards, so it's a plain glide to the other year.
       if (free()) return glideTo(top(next ? next.el : dir > 0 ? section.nextElementSibling : section), { ease: 'inOut' })
       const held = [c, next].filter(Boolean)
-      c.hold = Math.round(c.view ?? position(c))
+      c.hold = c.selected ?? Math.round(position(c)) // the card it's on (or heading to), as the dial shows
       c.goal = null
       if (next) next.hold = next.view = next.shown // its first card, on its current lap
       // Jump to where this year's stage starts to move off (its end going down, its start going
@@ -611,6 +619,7 @@ function useStack(root, enabled) {
           const aim = scrollAim()
           const qAim = n > 1 ? clamp((aim - window.scrollY - rect.top) / landSpan(c.el, vh)) * (n - 1) : 0
           selected = c.hold ?? (loose || c.direct ? Math.round(v) : c.goal ?? ahead(qAim + c.shown, Math.sign(aim - window.scrollY) || dirY))
+          c.selected = selected
           // The row follows a drag directly; otherwise it slides to the selected card, quickly
           // at first and softly at the end, like focus moving along a row on a TV.
           if (c.view === null || still) c.view = c.direct ? v : selected
@@ -680,7 +689,16 @@ function useStack(root, enabled) {
               if (k === active) dot.setAttribute('aria-current', 'true')
               else dot.removeAttribute('aria-current')
             })
-            c.cards.forEach((card, k) => setFrontCard(card, k === active))
+            c.cards.forEach((card, k) => {
+              setFrontCard(card, k === active)
+              // A card opened with "Show results" folds again once it leaves the front.
+              if (k !== active && card.classList.contains('expanded')) {
+                card.classList.remove('expanded')
+                const button = card.querySelector('.results-toggle')
+                button.setAttribute('aria-expanded', 'false')
+                button.firstChild.textContent = 'Show results'
+              }
+            })
             if (lost && c.buttons[active]) c.buttons[active].focus({ preventScroll: true })
             if (c.tipFor) showTip(c, c.tipFor)
           }
@@ -770,10 +788,19 @@ function useStack(root, enabled) {
         on(el, 'focus', () => el.matches(':focus-visible') && showTip(c, el))
         on(el, 'blur', () => hideTip(c))
       }
+      // "Show results" (phones): open the card to its full height, or fold it again.
+      for (const button of c.el.querySelectorAll('.results-toggle')) {
+        on(button, 'click', () => {
+          const open = button.closest('.deck-card').classList.toggle('expanded')
+          button.setAttribute('aria-expanded', String(open))
+          button.firstChild.textContent = open ? 'Hide results' : 'Show results'
+          onScroll() // the row follows the card's new height
+        })
+      }
       // Clicking a card further round brings it to the front.
       c.cards.forEach((card, k) =>
         on(card, 'click', (e) => {
-          if (c.dragged || e.target.closest('a')) return
+          if (c.dragged || e.target.closest('a, button')) return
           if (k !== c.active) goToCard(c, k)
         }),
       )
