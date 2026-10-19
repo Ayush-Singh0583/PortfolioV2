@@ -75,9 +75,15 @@ export const scrollToY = (y, { immediate = false } = {}) =>
 // A short eased scroll to y (the journey ring settling on a card, or turning to one). It gives
 // way at once to anything else that moves the page (a wheel, a finger, the keyboard, the
 // scrollbar), where a Lenis animation would keep pulling the page back to its target.
+// ease 'out' carries on a movement already under way (a release, a snap); 'inOut' starts and
+// ends gently, for a turn asked for by a click or a key.
 let glide = 0
 let gliding = false
-export function glideTo(y) {
+const EASES = {
+  out: (t) => 1 - (1 - t) ** 3,
+  inOut: (t) => (t < 0.5 ? 4 * t ** 3 : 1 - (2 - 2 * t) ** 3 / 2),
+}
+export function glideTo(y, { ease = 'out' } = {}) {
   cancelAnimationFrame(glide)
   const from = window.scrollY
   const distance = Math.abs(y - from)
@@ -86,14 +92,15 @@ export function glideTo(y) {
     scrollToY(y, { immediate: true })
     return
   }
-  const ms = Math.min(900, 350 + distance * 0.12)
+  const ms = ease === 'inOut' ? Math.min(1100, 480 + distance * 0.1) : Math.min(900, 350 + distance * 0.12)
+  const curve = EASES[ease]
   const start = performance.now()
   let expected = from
   gliding = true
   const frame = (now) => {
     if (Math.abs(window.scrollY - expected) > 2) return (gliding = false) // someone else scrolled
     const t = Math.min(1, (now - start) / ms)
-    expected = from + (y - from) * (1 - (1 - t) ** 3) // ease-out
+    expected = from + (y - from) * curve(t)
     scrollToY(expected, { immediate: true })
     if (t < 1) glide = requestAnimationFrame(frame)
     else gliding = false

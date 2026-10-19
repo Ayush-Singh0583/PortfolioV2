@@ -388,6 +388,20 @@ function ringShape(n, w) {
 // fills the width and every pixel of height counts.
 const frontZoom = () => (window.innerWidth <= 900 ? 0.03 : 0.07)
 
+// One step of a damped spring pulling x towards `to` (stiffness k, damping ratio z: 1 settles
+// without overshoot, lower gives a little give), in small sub-steps so it stays stable on a slow
+// frame. Returns [x, velocity].
+function spring(x, vel, to, k, z, dt) {
+  const damping = 2 * z * Math.sqrt(k)
+  const steps = Math.max(1, Math.ceil(dt * 240))
+  const h = dt / steps
+  for (let i = 0; i < steps; i++) {
+    vel += (k * (to - x) - damping * vel) * h
+    x += vel * h
+  }
+  return [x, vel]
+}
+
 const mod = (x, n) => ((x % n) + n) % n
 // x wrapped into [-n/2, n/2): the shortest way round a circle of n positions.
 const around = (x, n) => x - n * Math.round(x / n)
@@ -428,7 +442,16 @@ function useStack(root, enabled) {
       active: -1,
       q: 0,
       shown: 0, // laps added to q for display (animates during a turn past the seam)
+      shownV: 0,
       spin: 0, // where shown is heading
+      // The camera (see update): how far it has pulled back (0–1), how far the front card has
+      // lifted (1 = settled in front), their spring velocities, and how fast the ring turns.
+      depth: 0,
+      depthV: 0,
+      pop: 1,
+      popV: 0,
+      speed: 0,
+      lastV: null,
     }))
     const rings = chapters.filter((c) => c.ring && c.cards.length > 1)
     // Page position at which a chapter shows card position q (fractional is fine).
@@ -445,15 +468,17 @@ function useStack(root, enabled) {
       return r.top <= 2 && r.bottom >= stableHeight() * 0.9
     }
 
-    // Turn the ring to whole position `target` (any integer; wraps round).
-    const turnTo = (c, target) => {
+    // Turn the ring to whole position `target` (any integer; wraps round). `ease` is 'inOut' for
+    // a turn asked for by a click or key (starts and ends gently), 'out' when the ring is
+    // already moving (a release or a snap).
+    const turnTo = (c, target, ease = 'out') => {
       const n = c.cards.length
       if (n < 2) return
       const k = mod(target, n)
       const lap = target - k
       if (lap === c.spin && Math.abs(c.shown - c.spin) < 1e-3) {
         // Same lap: glide the page to the card.
-        glideTo(yFor(c, k))
+        glideTo(yFor(c, k), { ease })
       } else {
         // Past the seam: jump the page to the card at once and animate the turn instead.
         const v = position(c)
@@ -471,16 +496,17 @@ function useStack(root, enabled) {
       const lap = n * Math.floor(v / n)
       const q = Math.min(v - lap, n - 1)
       c.shown = c.spin = v - q
+      c.shownV = 0
       c.q = q
       follow(c, q)
       onScroll()
     }
     const settle = (c) => turnTo(c, Math.round(position(c)))
-    const step = (c, dir) => turnTo(c, Math.round(position(c)) + dir)
+    const step = (c, dir) => turnTo(c, Math.round(position(c)) + dir, 'inOut')
     // Go to card k the shortest way round.
     const goToCard = (c, k) => {
       const v = position(c)
-      turnTo(c, Math.round(v + around(k - v, c.cards.length)))
+      turnTo(c, Math.round(v + around(k - v, c.cards.length)), 'inOut')
     }
     // After a drag, swipe or sideways scroll that began at card `from`: once it has moved a
     // little, on to the next card in that direction (further for a long one), so a short flick
@@ -528,34 +554,62 @@ function useStack(root, enabled) {
         const q = n > 1 ? clamp(-rect.top / landSpan(c.el, vh)) * (n - 1) : 0
         c.q = q
         if (c.ring) {
-          if (Math.abs(c.shown - c.spin) > 1e-3) {
-            c.shown += (c.spin - c.shown) * (1 - Math.exp(-7 * dt))
-            if (Math.abs(c.shown - c.spin) < 1e-3) c.shown = c.spin
-            else animating = true
+          // A turn past the seam: the extra laps follow a critically damped spring, so the
+          // turn starts gently and lands without a bump.
+          if (Math.abs(c.shown - c.spin) > 1e-3 || Math.abs(c.shownV) > 1e-3) {
+            ;[c.shown, c.shownV] = spring(c.shown, c.shownV, c.spin, 55, 1, dt)
+            if (Math.abs(c.shown - c.spin) < 1e-3 && Math.abs(c.shownV) < 1e-2) {
+              c.shown = c.spin
+              c.shownV = 0
+            } else animating = true
           }
           const v = q + c.shown
           const w = c.cards[0]?.offsetWidth ?? 0
           const { step: angle, full, radius } = ringShape(n, w)
           c.deck.style.perspective = `${Math.max(1300, radius * 2.2).toFixed(0)}px`
-          // Zoom out while turning (the ring sinks back), in again as a card settles; with
-          // reduced motion it just turns.
-          const turning = n > 1 && !still ? Math.sin((v - Math.floor(v)) * Math.PI) : 0
-          const sink = 220 * turning
-          const pop = still ? 0 : frontZoom()
+          // The camera. It pulls back as the ring turns, further the faster it goes, and comes
+          // back in more slowly as the ring settles; then the front card lifts towards you with
+          // a little give. Springs rather than the position itself, so a long spin is one smooth
+          // move instead of a bob per card. With reduced motion the ring just turns.
+          const speed = dt > 0 && c.lastV !== null ? Math.min(6, Math.abs(v - c.lastV) / dt) : 0
+          c.lastV = v
+          c.speed += (speed - c.speed) * (1 - Math.exp(-12 * dt))
+          const off = Math.max(0, Math.abs(v - Math.round(v)) - 0.01) // 0 on a card, ~0.5 half way
+          const depthTo = still ? 0 : clamp(c.speed / 2.5 + off * 0.7)
+          ;[c.depth, c.depthV] = spring(c.depth, c.depthV, depthTo, depthTo > c.depth ? 170 : 55, 1, dt)
+          const popTo = still ? 1 : clamp(1 - off * 5) * (1 - clamp(c.speed / 1.2))
+          ;[c.pop, c.popV] = spring(c.pop, c.popV, popTo, 110, 0.6, dt)
+          const resting = Math.abs(c.depth - depthTo) + Math.abs(c.depthV) + Math.abs(c.pop - popTo) + Math.abs(c.popV) < 2e-3
+          if (c.speed > 0.01 || !resting) animating = true
+          const narrow = window.innerWidth <= 900
+          const sink = c.depth * (narrow ? 150 : 280)
+          const zoomIn = still ? 0 : clamp(c.pop, 0, 1.2) // reduced motion: no scaling at all
+          const lit = still ? 1 : clamp(c.pop)
+          // The stage light under the front card brightens as it settles.
+          c.deck.style.setProperty('--stage', (0.25 + 0.75 * clamp(c.pop)).toFixed(3))
           c.cards.forEach((card, k) => {
             const d = n > 1 ? around(k - v, n) : 0 // circular distance from the front
             const a = d * angle
             const far = Math.abs(a)
             // On a part ring, cards fade out near the seam where they wrap round.
             const seam = full ? 1 : clamp((n / 2 - Math.abs(d)) / 0.6)
-            const zoom = 1 + pop * clamp(1 - Math.abs(d)) * (1 - turning) // the front card, settled
+            const zoom = 1 + frontZoom() * zoomIn * clamp(1 - Math.abs(d))
             card.style.transform =
               `translate(-50%, -50%) translateZ(${(-radius - sink).toFixed(1)}px) ` +
-              `rotateY(${a.toFixed(2)}deg) translateZ(${radius.toFixed(1)}px) scale(${zoom.toFixed(3)})`
+              `rotateY(${a.toFixed(2)}deg) translateZ(${radius.toFixed(1)}px) scale(${zoom.toFixed(4)})`
             card.style.zIndex = String(Math.round(100 + 100 * Math.cos((a * Math.PI) / 180)))
             card.style.opacity = (clamp(1.25 - far / 75) * seam).toFixed(3)
             card.style.setProperty('--cover', (clamp(far / angle, 0, 1.4) * 0.45).toFixed(3))
             card.style.visibility = far > 95 || seam === 0 ? 'hidden' : 'visible'
+            // Light: the front card rises off its shadow and its edge catches a warm light; a
+            // soft glint sweeps across each card as it turns; cards further round fall slightly
+            // out of focus (not on phones, where they're mostly off screen).
+            card.style.setProperty('--lift', (lit * clamp(1 - Math.abs(d) * 1.5)).toFixed(3))
+            const sheen = still ? 0 : clamp(1 - far / (angle * 1.3)) * c.depth
+            card.style.setProperty('--sheen', sheen.toFixed(3))
+            if (sheen > 0.005) card.style.setProperty('--sheen-x', `${(-110 + clamp((d + 1) / 2) * 280).toFixed(1)}%`)
+            const blur = narrow ? 0 : Math.round(clamp(Math.abs(d) - 0.35, 0, 1.5) * 16) / 10
+            if (card.blur !== blur) card.style.filter = (card.blur = blur) ? `blur(${blur}px)` : ''
           })
           if (c.dial) {
             const frac = n > 0 ? mod(v, n) / n : 0
