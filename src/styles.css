@@ -1663,9 +1663,42 @@ main {
 }
 
 @media (max-width: 900px) {
-  /* No vertical wave on the left in this layout, so the stage uses the full width. */
+  /* Phones: a year is an ordinary section, not a pinned stage, so swiping up and down always
+     moves along the page; its projects move sideways (swipe, ‹ ›, the dial). The row is as tall
+     as the year's tallest card, and cards grow to fit their text (nothing scrolls inside them). */
+  .chapter.ring {
+    height: auto;
+  }
+
   .chapter.ring .chapter-stage {
-    padding: 76px 0 12px;
+    position: relative;
+    height: auto;
+    padding: 32px 0 16px;
+  }
+
+  /* One card shows at a time here, so each is as tall as its own text (at least 360px), hung
+     from the top; the row eases to the selected card's height (--sel-h, from useStack) and the
+     ⌃ ⌄ row follows just under it. */
+  .ring .ring-wrap {
+    flex: none;
+    height: calc(var(--sel-h, 420px) + var(--skip-room, 0px) + 24px);
+    transition: height var(--motion-200) ease-out;
+  }
+
+  .ring .deck-card {
+    top: 8px;
+    transform-origin: 50% 0;
+  }
+
+  .ring .deck-card .entry-card,
+  .ring .deck-card.entry-milestone .entry-card {
+    height: auto;
+    min-height: 360px;
+  }
+
+  .ring-skips {
+    top: calc(var(--sel-h, 420px) + 24px);
+    transition: top var(--motion-200) ease-out;
   }
 
   .ring .deck {
@@ -1703,14 +1736,6 @@ main {
   .ring-arrow svg {
     width: 18px;
     height: 18px;
-  }
-}
-
-/* Short phones (an iPhone SE): the quick facts give way, so the description and links fit
-   without scrolling. The date is still in each card's header. */
-@media (max-width: 900px) and (max-height: 760px) {
-  .ring .deck-card .facts {
-    display: none;
   }
 }
 

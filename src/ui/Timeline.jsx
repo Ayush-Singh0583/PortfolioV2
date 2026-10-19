@@ -342,10 +342,13 @@ function useCardSizes(root, enabled) {
         const need = Math.max(...cards.map((card) => card.offsetHeight))
         for (const card of cards) card.style.height = ''
         // Room left in the pinned stage. Ring: the row's own height (it takes the space below
-        // the year heading), less room for the focus border and shadow. Stack: below the top
-        // bar, with space for the pile's edges.
+        // the year heading), less room for the focus border, shadow and the ⌃ ⌄ row; on a phone
+        // there's no pinned stage, so the cards simply grow to fit (nothing scrolls inside them).
+        // Stack: below the top bar, with space for the pile's edges.
         const room = deck.closest('.ring')
-          ? deck.clientHeight - 16 - (parseFloat(getComputedStyle(deck).getPropertyValue('--skip-room')) || 0)
+          ? compact
+            ? Infinity
+            : deck.clientHeight - 16 - (parseFloat(getComputedStyle(deck).getPropertyValue('--skip-room')) || 0)
           : compact
             ? deck.parentElement.clientHeight - deck.offsetTop - 24
             : window.innerHeight - 176
@@ -426,6 +429,7 @@ function useStack(root, enabled) {
       el,
       ring: el.classList.contains('ring'),
       deck: el.querySelector('.deck'),
+      wrap: el.querySelector('.ring-wrap'),
       cards: [...el.querySelectorAll('.deck-card')],
       items: [...el.querySelectorAll('.chapter-index li, .dial-dot')],
       buttons: [...el.querySelectorAll('.chapter-index button, .dial-dot')],
@@ -453,10 +457,17 @@ function useStack(root, enabled) {
     }
     const follow = (c, q) => scrollToY(yFor(c, q), { immediate: true })
     const position = (c) => c.q + c.shown
-    // The year is pinned on screen (so its controls and the arrow keys act on it).
+    // On a phone a year is an ordinary section: swiping up and down moves along the page, and the
+    // projects only move sideways (swipe, ‹ ›, the dial), so their position is the row's own
+    // (c.q), not the scroll's. See the ≤900px block for .chapter.ring in styles.css.
+    const phone = window.matchMedia('(max-width: 900px)')
+    const free = () => phone.matches
+    // The year the keys and sideways scrolling act on: the one pinned on screen, or on a phone
+    // the one across the middle of the screen.
     const pinned = (c) => {
       const r = c.el.getBoundingClientRect()
-      return r.top <= 2 && r.bottom >= stableHeight() * 0.9
+      const vh = stableHeight()
+      return free() ? r.top < vh / 2 && r.bottom > vh / 2 : r.top <= 2 && r.bottom >= vh * 0.9
     }
 
     // Select whole position `target` (any integer; wraps round). The row heads there at once
@@ -467,6 +478,13 @@ function useStack(root, enabled) {
       if (n < 2) return
       const k = mod(target, n)
       const lap = target - k
+      if (free()) {
+        // Not tied to the scroll: just select the card.
+        c.q = k
+        c.shown = lap
+        c.goal = null
+        return onScroll()
+      }
       c.goal = target
       if (lap === c.shown) glideTo(yFor(c, k), { ease })
       else {
@@ -486,7 +504,7 @@ function useStack(root, enabled) {
       const q = Math.min(v - lap, n - 1)
       c.shown = v - q
       c.q = q
-      follow(c, q)
+      if (!free()) follow(c, q)
       onScroll()
     }
     const settle = (c) => turnTo(c, Math.round(position(c)))
@@ -511,6 +529,8 @@ function useStack(root, enabled) {
       const lastPinned = (ch) => top(ch.el) + ch.el.offsetHeight - ch.el.firstElementChild.offsetHeight
       const next = chapters[chapters.indexOf(c) + dir]
       const section = root.current.closest('section')
+      // On a phone the scroll doesn't move the cards, so it's a plain glide to the other year.
+      if (free()) return glideTo(top(next ? next.el : dir > 0 ? section.nextElementSibling : section), { ease: 'inOut' })
       const held = [c, next].filter(Boolean)
       c.hold = Math.round(c.view ?? position(c))
       c.goal = null
@@ -574,12 +594,13 @@ function useStack(root, enabled) {
       // The steady height (not innerHeight, which changes as a phone's address bar moves),
       // matching the 100vh in the chapter heights.
       const vh = stableHeight()
+      const loose = free()
       let animating = false
       for (const c of chapters) {
         const rect = c.el.getBoundingClientRect()
         if (rect.bottom < -vh || rect.top > vh * 2) continue
         const n = c.cards.length
-        const q = n > 1 ? clamp(-rect.top / landSpan(c.el, vh)) * (n - 1) : 0
+        const q = loose && c.ring ? c.q : n > 1 ? clamp(-rect.top / landSpan(c.el, vh)) * (n - 1) : 0
         c.q = q
         let selected = Math.round(q + c.shown)
         if (c.ring) {
@@ -589,7 +610,7 @@ function useStack(root, enabled) {
           // rather than after the smooth scroll has caught up.
           const aim = scrollAim()
           const qAim = n > 1 ? clamp((aim - window.scrollY - rect.top) / landSpan(c.el, vh)) * (n - 1) : 0
-          selected = c.hold ?? c.goal ?? (c.direct ? Math.round(v) : ahead(qAim + c.shown, Math.sign(aim - window.scrollY) || dirY))
+          selected = c.hold ?? (loose || c.direct ? Math.round(v) : c.goal ?? ahead(qAim + c.shown, Math.sign(aim - window.scrollY) || dirY))
           // The row follows a drag directly; otherwise it slides to the selected card, quickly
           // at first and softly at the end, like focus moving along a row on a TV.
           if (c.view === null || still) c.view = c.direct ? v : selected
@@ -608,7 +629,8 @@ function useStack(root, enabled) {
             const scale = side + (1 - side) * clamp(1 - ad)
             // With few cards, the one opposite the selected card fades out as it wraps round.
             const seam = clamp((n / 2 - ad) / 0.5)
-            card.style.transform = `translate(-50%, -50%) translateX(${x.toFixed(1)}px) scale(${scale.toFixed(4)})`
+            // Centred on the stage; on a phone the cards hang from the top, each its own height.
+            card.style.transform = `translate(-50%, ${loose ? '0%' : '-50%'}) translateX(${x.toFixed(1)}px) scale(${scale.toFixed(4)})`
             card.style.zIndex = String(100 - Math.round(ad * 10))
             card.style.opacity = seam.toFixed(3)
             card.style.visibility = seam === 0 || Math.abs(x) - (scale * w) / 2 > half ? 'hidden' : 'visible'
@@ -616,6 +638,11 @@ function useStack(root, enabled) {
             card.style.setProperty('--cover', (clamp(ad) * 0.6).toFixed(3))
             card.style.setProperty('--lift', clamp(1 - ad * 2.5).toFixed(3))
           })
+          // On a phone the row is as tall as the selected card (it eases to it, see .ring-wrap).
+          if (loose && c.wrap && n > 0) {
+            const h = c.cards[mod(selected, n)].offsetHeight
+            if (h && h !== c.wrapH) c.wrap.style.setProperty('--sel-h', `${(c.wrapH = h)}px`)
+          }
           if (c.dial) {
             const frac = n > 0 ? mod(c.view, n) / n : 0
             c.dial.querySelector('.dial-fill').style.strokeDasharray = `${frac.toFixed(4)} 1`
@@ -682,7 +709,7 @@ function useStack(root, enabled) {
     let held = false
     let gestures = 0 // drags and sideways scrolls in progress
     const snap = () => {
-      if (held || gestures) return
+      if (held || gestures || free()) return
       if (isGliding()) return waitToSnap() // still easing towards where it was sent
       const vh = stableHeight()
       for (const c of rings) {
@@ -888,7 +915,7 @@ function useStack(root, enabled) {
       } else if ((e.key === 'Home' || e.key === 'End') && e.target.closest?.('.dial')) {
         e.preventDefault()
         goToCard(c, e.key === 'Home' ? 0 : c.cards.length - 1)
-      } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !e.target.closest?.('.card-body')) {
+      } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !free() && !e.target.closest?.('.card-body')) {
         // ↓ ↑ move between years, as on a TV; inside a card whose text scrolls they still scroll it.
         e.preventDefault()
         if (!skipping) skip(c, e.key === 'ArrowDown' ? 1 : -1)
