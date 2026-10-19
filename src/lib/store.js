@@ -110,6 +110,10 @@ export function glideTo(y, { ease = 'out' } = {}) {
 
 // True while the page is still easing towards a target: a glide, a wheel turn or a link.
 export const isGliding = () => gliding || lenis?.isScrolling === 'smooth'
+// True only while a glideTo is under way (it stops as soon as anything else scrolls).
+export const glideActive = () => gliding
+// Where the page is heading: the target of a smooth wheel scroll, or simply where it is.
+export const scrollAim = () => lenis?.targetScroll ?? window.scrollY
 
 const enteredOf = (el) => clamp(1 - el.getBoundingClientRect().top / stableH)
 

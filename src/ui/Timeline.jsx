@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { about, journey } from '../content.js'
 import { formatDate, languageColor, projectCount, years } from '../lib/journey.js'
-import { glideTo, isGliding, scrollToY, stableHeight } from '../lib/store.js'
+import { glideActive, glideTo, isGliding, scrollAim, scrollToY, stableHeight } from '../lib/store.js'
 import { clamp, smoothstep } from '../lib/math.js'
 
 // How each year's projects are shown (journey.layout in content.js):
@@ -333,10 +333,11 @@ function useCardSizes(root, enabled) {
         for (const card of cards) card.style.height = 'auto'
         const need = Math.max(...cards.map((card) => card.offsetHeight))
         for (const card of cards) card.style.height = ''
-        // Room left in the pinned stage. Ring: the ring's own height (it takes the space
-        // below the year heading). Stack: below the top bar, with space for the pile's edges.
+        // Room left in the pinned stage. Ring: the row's own height (it takes the space below
+        // the year heading), less room for the focus border and shadow. Stack: below the top
+        // bar, with space for the pile's edges.
         const room = deck.closest('.ring')
-          ? deck.clientHeight / (1.01 + frontZoom()) - 8 // the front card zooms in a little
+          ? deck.clientHeight - 16
           : compact
             ? deck.parentElement.clientHeight - deck.offsetTop - 24
             : window.innerHeight - 176
@@ -376,30 +377,13 @@ function setFrontCard(li, front) {
   else body.removeAttribute('tabindex')
 }
 
-// Ring geometry for a year of n cards of width w: the angle between neighbours, whether
-// they close into a full circle, and the ring's radius (so neighbours just clear each other).
-function ringShape(n, w) {
-  const step = n >= 9 ? 360 / n : 38
-  const radius = (w * 0.56) / Math.sin(((step / 2) * Math.PI) / 180)
-  return { step, full: n * step >= 359.9, radius }
-}
-
-// How much the ring's front card zooms in once it settles: less on phones, where it already
-// fills the width and every pixel of height counts.
-const frontZoom = () => (window.innerWidth <= 900 ? 0.03 : 0.07)
-
-// One step of a damped spring pulling x towards `to` (stiffness k, damping ratio z: 1 settles
-// without overshoot, lower gives a little give), in small sub-steps so it stays stable on a slow
-// frame. Returns [x, velocity].
-function spring(x, vel, to, k, z, dt) {
-  const damping = 2 * z * Math.sqrt(k)
-  const steps = Math.max(1, Math.ceil(dt * 240))
-  const h = dt / steps
-  for (let i = 0; i < steps; i++) {
-    vel += (k * (to - x) - damping * vel) * h
-    x += vel * h
-  }
-  return [x, vel]
+// The row's geometry for cards w px wide, like a row of tiles in a TV app: the cards beside
+// the selected one are smaller (`side`); `near` is the distance from the selected card's centre
+// to a neighbour's, `pitch` the distance between two neighbours further out.
+function rowShape(w) {
+  const side = window.innerWidth <= 900 ? 0.86 : 0.8
+  const gap = Math.max(20, w * 0.07)
+  return { side, near: ((1 + side) * w) / 2 + gap, pitch: side * w + gap }
 }
 
 const mod = (x, n) => ((x % n) + n) % n
@@ -409,20 +393,21 @@ const around = (x, n) => x - n * Math.round(x / n)
 // The pinned layouts. As you scroll through a year:
 // - stack: each card slides up and lands on the one before; earlier cards shrink back and
 //   darken. The year's list of titles marks the card on top.
-// - ring: the cards sit on a 3D ring, oldest first, and it's circular: after the newest comes
-//   the oldest again, in both directions. The front card faces you, zoomed in; the others
-//   angle away and dim. While the ring turns it zooms out, and zooms back in as a card
-//   settles. A circular dial fills clockwise to a glowing tip, with a dot per card.
+// - ring: the cards stand in a row that loops round, oldest first, like the rows of a TV app
+//   (Netflix, Prime Video, Hotstar): the selected card sits in the middle at full size with a
+//   focus border; the others are smaller and dimmer, and after the newest comes the oldest
+//   again, both ways. Moving the selection slides the row quickly and lands it softly. A
+//   circular dial fills clockwise to a glowing tip, with a dot per card.
 //
 // Ring position: v = q + c.shown, where q comes from the scroll position (0…n−1 through the
-// pinned year) and c.shown is a whole number of laps (n) at rest. Going round past the
-// newest or oldest card jumps the page to the other end of the year (nothing visible moves
-// while it's pinned) and animates c.shown by the difference, so the ring keeps turning the
-// same way. Every control just sets v: titles (stack); dots, dragging the dial, dragging or
-// swiping the ring, sideways wheel or trackpad, clicking a side card, ‹ › and ← → (ring).
-// The ring never comes to rest between two cards: after a drag, swipe or sideways scroll it
-// goes on to the next card in the direction it was moving, and so does the page when it
-// stops scrolling part-way through a turn.
+// pinned year) and c.shown is a whole number of laps (n). The row is drawn at c.view, which
+// slides towards the selected card (a click, key or snap sets c.goal; otherwise the card the
+// scroll is on, counting the next one once the page has moved 0.15 of a card that way), or
+// follows a drag directly. Going round past the newest or oldest card jumps the page to the
+// other end of the year and adds a lap, so nothing visible jumps. Controls: titles (stack);
+// dots, dragging the dial, dragging or swiping the row, sideways wheel or trackpad, clicking a
+// side card, ‹ › and ← → (ring). The page never rests between two cards: when it stops
+// scrolling part-way, it glides on to the selected one.
 function useStack(root, enabled) {
   useEffect(() => {
     if (!enabled) return
@@ -441,17 +426,10 @@ function useStack(root, enabled) {
       tipFor: null, // the control whose note is showing
       active: -1,
       q: 0,
-      shown: 0, // laps added to q for display (animates during a turn past the seam)
-      shownV: 0,
-      spin: 0, // where shown is heading
-      // The camera (see update): how far it has pulled back (0–1), how far the front card has
-      // lifted (1 = settled in front), their spring velocities, and how fast the ring turns.
-      depth: 0,
-      depthV: 0,
-      pop: 1,
-      popV: 0,
-      speed: 0,
-      lastV: null,
+      shown: 0, // laps added to q (a whole number of n)
+      view: null, // where the row is drawn (slides towards the selected card)
+      goal: null, // the card a click, key or snap asked for, while the page glides there
+      direct: false, // a drag, sideways scroll or dial spin moves the row directly
     }))
     const rings = chapters.filter((c) => c.ring && c.cards.length > 1)
     // Page position at which a chapter shows card position q (fractional is fine).
@@ -468,44 +446,42 @@ function useStack(root, enabled) {
       return r.top <= 2 && r.bottom >= stableHeight() * 0.9
     }
 
-    // Turn the ring to whole position `target` (any integer; wraps round). `ease` is 'inOut' for
-    // a turn asked for by a click or key (starts and ends gently), 'out' when the ring is
-    // already moving (a release or a snap).
+    // Select whole position `target` (any integer; wraps round). The row heads there at once
+    // and the page follows: `ease` is 'inOut' for a click or key, 'out' when it's already
+    // moving (a release or a snap).
     const turnTo = (c, target, ease = 'out') => {
       const n = c.cards.length
       if (n < 2) return
       const k = mod(target, n)
       const lap = target - k
-      if (lap === c.spin && Math.abs(c.shown - c.spin) < 1e-3) {
-        // Same lap: glide the page to the card.
-        glideTo(yFor(c, k), { ease })
-      } else {
-        // Past the seam: jump the page to the card at once and animate the turn instead.
-        const v = position(c)
+      c.goal = target
+      if (lap === c.shown) glideTo(yFor(c, k), { ease })
+      else {
+        // Past the seam: jump the page to the card and add the lap, so v lands on the target
+        // while the row slides there from wherever it was drawn.
         follow(c, k)
         c.q = k
-        c.shown = still ? lap : v - k
-        c.spin = lap
-        onScroll()
+        c.shown = lap
       }
+      onScroll()
     }
-    // Set the ring position directly (dragging): the scroll goes to the matching card and any
-    // remainder (between the newest and the oldest) is shown as an offset.
+    // Set the position directly (dragging): the scroll goes to the matching card and any
+    // remainder (between the newest and the oldest) is kept in the laps.
     const setPosition = (c, v) => {
       const n = c.cards.length
       const lap = n * Math.floor(v / n)
       const q = Math.min(v - lap, n - 1)
-      c.shown = c.spin = v - q
-      c.shownV = 0
+      c.shown = v - q
       c.q = q
       follow(c, q)
       onScroll()
     }
     const settle = (c) => turnTo(c, Math.round(position(c)))
-    const step = (c, dir) => turnTo(c, Math.round(position(c)) + dir, 'inOut')
+    // A key or arrow moves on from the card already asked for, so quick presses add up.
+    const step = (c, dir) => turnTo(c, (c.goal ?? Math.round(position(c))) + dir, 'inOut')
     // Go to card k the shortest way round.
     const goToCard = (c, k) => {
-      const v = position(c)
+      const v = c.goal ?? position(c)
       turnTo(c, Math.round(v + around(k - v, c.cards.length)), 'inOut')
     }
     // After a drag, swipe or sideways scroll that began at card `from`: once it has moved a
@@ -541,7 +517,9 @@ function useStack(root, enabled) {
     const update = () => {
       raf = 0
       const now = performance.now()
-      const dt = Math.min((now - last) / 1000, 0.05)
+      // After a pause, the first frame counts as one frame (not the whole pause), so a slide
+      // starts smoothly.
+      const dt = now - last > 100 ? 1 / 60 : Math.min((now - last) / 1000, 0.05)
       last = now
       // The steady height (not innerHeight, which changes as a phone's address bar moves),
       // matching the 100vh in the chapter heights.
@@ -553,66 +531,43 @@ function useStack(root, enabled) {
         const n = c.cards.length
         const q = n > 1 ? clamp(-rect.top / landSpan(c.el, vh)) * (n - 1) : 0
         c.q = q
+        let selected = Math.round(q + c.shown)
         if (c.ring) {
-          // A turn past the seam: the extra laps follow a critically damped spring, so the
-          // turn starts gently and lands without a bump.
-          if (Math.abs(c.shown - c.spin) > 1e-3 || Math.abs(c.shownV) > 1e-3) {
-            ;[c.shown, c.shownV] = spring(c.shown, c.shownV, c.spin, 55, 1, dt)
-            if (Math.abs(c.shown - c.spin) < 1e-3 && Math.abs(c.shownV) < 1e-2) {
-              c.shown = c.spin
-              c.shownV = 0
-            } else animating = true
-          }
-          const v = q + c.shown
+          const v = q + c.shown // where the scroll (or a drag) has the row
+          if (c.goal !== null && !glideActive()) c.goal = null // arrived, or another scroll took over
+          // Judge the scroll by where it's heading, so a wheel turn moves the row at once
+          // rather than after the smooth scroll has caught up.
+          const aim = scrollAim()
+          const qAim = n > 1 ? clamp((aim - window.scrollY - rect.top) / landSpan(c.el, vh)) * (n - 1) : 0
+          selected = c.goal ?? (c.direct ? Math.round(v) : ahead(qAim + c.shown, Math.sign(aim - window.scrollY) || dirY))
+          // The row follows a drag directly; otherwise it slides to the selected card, quickly
+          // at first and softly at the end, like focus moving along a row on a TV.
+          if (c.view === null || still) c.view = c.direct ? v : selected
+          else if (c.direct) c.view = v
+          else if (Math.abs(selected - c.view) > 1e-3) {
+            c.view += (selected - c.view) * (1 - Math.exp(-11 * dt))
+            animating = true
+          } else c.view = selected
           const w = c.cards[0]?.offsetWidth ?? 0
-          const { step: angle, full, radius } = ringShape(n, w)
-          c.deck.style.perspective = `${Math.max(1300, radius * 2.2).toFixed(0)}px`
-          // The camera. It pulls back as the ring turns, further the faster it goes, and comes
-          // back in more slowly as the ring settles; then the front card lifts towards you with
-          // a little give. Springs rather than the position itself, so a long spin is one smooth
-          // move instead of a bob per card. With reduced motion the ring just turns.
-          const speed = dt > 0 && c.lastV !== null ? Math.min(6, Math.abs(v - c.lastV) / dt) : 0
-          c.lastV = v
-          c.speed += (speed - c.speed) * (1 - Math.exp(-12 * dt))
-          const off = Math.max(0, Math.abs(v - Math.round(v)) - 0.01) // 0 on a card, ~0.5 half way
-          const depthTo = still ? 0 : clamp(c.speed / 2.5 + off * 0.7)
-          ;[c.depth, c.depthV] = spring(c.depth, c.depthV, depthTo, depthTo > c.depth ? 170 : 55, 1, dt)
-          const popTo = still ? 1 : clamp(1 - off * 5) * (1 - clamp(c.speed / 1.2))
-          ;[c.pop, c.popV] = spring(c.pop, c.popV, popTo, 110, 0.6, dt)
-          const resting = Math.abs(c.depth - depthTo) + Math.abs(c.depthV) + Math.abs(c.pop - popTo) + Math.abs(c.popV) < 2e-3
-          if (c.speed > 0.01 || !resting) animating = true
-          const narrow = window.innerWidth <= 900
-          const sink = c.depth * (narrow ? 150 : 280)
-          const zoomIn = still ? 0 : clamp(c.pop, 0, 1.2) // reduced motion: no scaling at all
-          const lit = still ? 1 : clamp(c.pop)
-          // The stage light under the front card brightens as it settles.
-          c.deck.style.setProperty('--stage', (0.25 + 0.75 * clamp(c.pop)).toFixed(3))
+          const { side, near, pitch } = rowShape(w)
+          const half = window.innerWidth / 2 + 40
           c.cards.forEach((card, k) => {
-            const d = n > 1 ? around(k - v, n) : 0 // circular distance from the front
-            const a = d * angle
-            const far = Math.abs(a)
-            // On a part ring, cards fade out near the seam where they wrap round.
-            const seam = full ? 1 : clamp((n / 2 - Math.abs(d)) / 0.6)
-            const zoom = 1 + frontZoom() * zoomIn * clamp(1 - Math.abs(d))
-            card.style.transform =
-              `translate(-50%, -50%) translateZ(${(-radius - sink).toFixed(1)}px) ` +
-              `rotateY(${a.toFixed(2)}deg) translateZ(${radius.toFixed(1)}px) scale(${zoom.toFixed(4)})`
-            card.style.zIndex = String(Math.round(100 + 100 * Math.cos((a * Math.PI) / 180)))
-            card.style.opacity = (clamp(1.25 - far / 75) * seam).toFixed(3)
-            card.style.setProperty('--cover', (clamp(far / angle, 0, 1.4) * 0.45).toFixed(3))
-            card.style.visibility = far > 95 || seam === 0 ? 'hidden' : 'visible'
-            // Light: the front card rises off its shadow and its edge catches a warm light; a
-            // soft glint sweeps across each card as it turns; cards further round fall slightly
-            // out of focus (not on phones, where they're mostly off screen).
-            card.style.setProperty('--lift', (lit * clamp(1 - Math.abs(d) * 1.5)).toFixed(3))
-            const sheen = still ? 0 : clamp(1 - far / (angle * 1.3)) * c.depth
-            card.style.setProperty('--sheen', sheen.toFixed(3))
-            if (sheen > 0.005) card.style.setProperty('--sheen-x', `${(-110 + clamp((d + 1) / 2) * 280).toFixed(1)}%`)
-            const blur = narrow ? 0 : Math.round(clamp(Math.abs(d) - 0.35, 0, 1.5) * 16) / 10
-            if (card.blur !== blur) card.style.filter = (card.blur = blur) ? `blur(${blur}px)` : ''
+            const d = n > 1 ? around(k - c.view, n) : 0 // distance from the middle, round the loop
+            const ad = Math.abs(d)
+            const x = Math.sign(d) * (ad <= 1 ? ad * near : near + (ad - 1) * pitch)
+            const scale = side + (1 - side) * clamp(1 - ad)
+            // With few cards, the one opposite the selected card fades out as it wraps round.
+            const seam = clamp((n / 2 - ad) / 0.5)
+            card.style.transform = `translate(-50%, -50%) translateX(${x.toFixed(1)}px) scale(${scale.toFixed(4)})`
+            card.style.zIndex = String(100 - Math.round(ad * 10))
+            card.style.opacity = seam.toFixed(3)
+            card.style.visibility = seam === 0 || Math.abs(x) - (scale * w) / 2 > half ? 'hidden' : 'visible'
+            // Cards beside the selected one dim; the selected one gets the focus border.
+            card.style.setProperty('--cover', (clamp(ad) * 0.6).toFixed(3))
+            card.style.setProperty('--lift', clamp(1 - ad * 2.5).toFixed(3))
           })
           if (c.dial) {
-            const frac = n > 0 ? mod(v, n) / n : 0
+            const frac = n > 0 ? mod(c.view, n) / n : 0
             c.dial.querySelector('.dial-fill').style.strokeDasharray = `${frac.toFixed(4)} 1`
             const tip = c.dial.querySelector('.dial-tip')
             const t = frac * Math.PI * 2
@@ -630,7 +585,7 @@ function useStack(root, enabled) {
             card.style.visibility = enter < 0.001 ? 'hidden' : 'visible'
           })
         }
-        const active = n > 0 ? mod(Math.round(q + c.shown), n) : 0
+        const active = n > 0 ? mod(selected, n) : 0
         if (active !== c.active) {
           c.active = active
           c.items.forEach((item, k) => {
@@ -664,6 +619,15 @@ function useStack(root, enabled) {
     let raf = 0
     let lastY = window.scrollY
     let dirY = 0
+    // The whole card a position counts as, given the way the page last moved: once it has
+    // moved 0.15 of a card past one, the next.
+    const ahead = (x, dir = dirY) => {
+      const base = Math.floor(x)
+      const frac = x - base
+      if (dir > 0) return base + (frac >= 0.15 ? 1 : 0)
+      if (dir < 0) return base + (frac > 0.85 ? 1 : 0)
+      return Math.round(x)
+    }
     let idle = 0
     let held = false
     let gestures = 0 // drags and sideways scrolls in progress
@@ -674,11 +638,9 @@ function useStack(root, enabled) {
       for (const c of rings) {
         const n = c.cards.length
         const q = (-c.el.getBoundingClientRect().top / landSpan(c.el, vh)) * (n - 1)
-        const near = Math.round(q)
-        if (q <= 0 || q >= n - 1 || Math.abs(q - near) < 0.02) continue
-        const back = dirY > 0 ? Math.floor(q) : Math.ceil(q)
-        const ahead = dirY > 0 ? Math.ceil(q) : Math.floor(q)
-        glideTo(yFor(c, !dirY ? near : Math.abs(q - back) < 0.15 ? back : ahead))
+        const target = ahead(q)
+        if (q <= 0 || q >= n - 1 || Math.abs(q - target) < 0.02) continue
+        glideTo(yFor(c, target))
       }
     }
     const waitToSnap = () => {
@@ -719,7 +681,7 @@ function useStack(root, enabled) {
       }
       const n = c.cards.length
       if (n < 2) continue
-      const cardStep = () => (c.cards[0]?.offsetWidth ?? 400) * 0.75 // px of drag per card
+      const cardStep = () => rowShape(c.cards[0]?.offsetWidth ?? 400).near // px per card: the row follows the pointer
 
       c.buttons.forEach((button, k) => on(button, 'click', () => goToCard(c, k)))
       c.arrows.forEach((arrow) => on(arrow, 'click', () => step(c, arrow.classList.contains('next') ? 1 : -1)))
@@ -741,14 +703,15 @@ function useStack(root, enabled) {
       let drag = null
       on(c.deck, 'pointerdown', (e) => {
         if (e.button !== 0 || e.target.closest('a, button')) return
-        drag = { x: e.clientX, v: position(c), id: e.pointerId, moved: false, trail: [] }
+        drag = { x: e.clientX, v: c.view ?? position(c), id: e.pointerId, moved: false, trail: [] }
         c.dragged = false
       })
       on(c.deck, 'pointermove', (e) => {
         if (!drag || e.pointerId !== drag.id) return
         const dx = e.clientX - drag.x
         if (!drag.moved && Math.abs(dx) > 6) {
-          drag.moved = c.dragged = true
+          drag.moved = c.dragged = c.direct = true
+          c.goal = null
           gestures++
           c.deck.setPointerCapture(e.pointerId)
           c.deck.classList.add('dragging')
@@ -763,6 +726,7 @@ function useStack(root, enabled) {
         if (!drag || e.pointerId !== drag.id) return
         if (drag.moved) {
           gestures--
+          c.direct = false
           // Speed over the last tenth of a second, if it was still moving when let go.
           const [t0, v0] = drag.trail[0]
           const [t1, v1] = drag.trail.at(-1)
@@ -787,14 +751,18 @@ function useStack(root, enabled) {
           e.stopPropagation() // or Lenis would also scroll the page by its small vertical part
           const px = e.deltaX * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerWidth : 1)
           if (!wheel) {
-            wheel = { v: position(c), from: Math.round(position(c)), timer: 0 }
+            const v = c.view ?? position(c)
+            wheel = { v, from: Math.round(v), timer: 0 }
+            c.direct = true
+            c.goal = null
             gestures++
           }
-          wheel.v += px / (cardStep() * 0.85)
+          wheel.v += px / cardStep()
           setPosition(c, wheel.v)
           clearTimeout(wheel.timer)
           wheel.timer = setTimeout(() => {
             gestures--
+            c.direct = false
             release(c, wheel.from)
             wheel = null
           }, 180)
@@ -818,9 +786,10 @@ function useStack(root, enabled) {
         on(c.dial, 'pointermove', (e) => {
           if (!spin || spin.id !== e.pointerId) return
           if (!spin.moved && Math.hypot(e.clientX - spin.x, e.clientY - spin.y) > 4) {
-            spin.moved = true
+            spin.moved = c.direct = true
+            c.goal = null
             gestures++
-            spin.v = position(c)
+            spin.v = c.view ?? position(c)
             spin.at = mod(spin.v, n)
             c.dial.setPointerCapture(e.pointerId)
             hideTip(c)
@@ -836,6 +805,7 @@ function useStack(root, enabled) {
           if (!spin || spin.id !== e.pointerId) return
           if (spin.moved) {
             gestures--
+            c.direct = false
             settle(c)
           } else if (!e.target.closest('.dial-dot')) goToCard(c, Math.round(placeAt(e)) % n)
           spin = null
@@ -844,6 +814,7 @@ function useStack(root, enabled) {
         on(c.dial, 'pointercancel', (e) => {
           if (spin?.moved && spin.id === e.pointerId) {
             gestures--
+            c.direct = false
             settle(c)
           }
           spin = null

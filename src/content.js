@@ -101,8 +101,9 @@ export const about = {
 }
 
 export const journey = {
-  // 'ring': each year pins in place while its cards turn on a 3D ring, oldest first, the front
-  //         one zoomed in; a circular dial shows where you are (scroll, drag, click or use ← →).
+  // 'ring': each year pins in place while its cards stand in a row that loops round, oldest
+  //         first, like a TV app's row: the selected one in the middle, bigger, with a focus
+  //         border; a circular dial shows where you are (scroll, drag, click or use ← →).
   // 'stack': each year pins in place while its cards slide in and stack up like a deck.
   // 'list': each year's cards scroll past in a column.
   layout: 'ring',

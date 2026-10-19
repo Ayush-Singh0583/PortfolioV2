@@ -1223,7 +1223,6 @@ main {
   right: auto;
   width: var(--card-w);
   transform-origin: 50% 50%;
-  backface-visibility: hidden;
 }
 
 /* Cards further round are there to be clicked to the front; their links wait until then,
@@ -1245,61 +1244,31 @@ main {
   opacity: 1;
 }
 
-/* Light on the ring, driven from useStack in Timeline.jsx:
-   --lift  (0–1) the card in front, settled: it rises off a soft contact shadow and its edge
-           catches a warm light;
-   --sheen (0–1) and --sheen-x: a soft glint crossing a card while the ring turns;
-   --stage (on the deck): the light under the front card, brightest when it has settled. */
+/* The selected card, like the tile in focus on a TV app: a crisp light border with a warm
+   glow, lifted off a soft shadow. --lift (0–1, from useStack in Timeline.jsx) is 1 when the
+   card is in the middle, so the border arrives with the card as the row slides. */
 .ring .deck-card::before {
   content: '';
   position: absolute;
   left: 8%;
   right: 8%;
-  bottom: -32px;
-  height: 64px;
+  bottom: -24px;
+  height: 48px;
   border-radius: 50%;
   background: radial-gradient(closest-side, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
-  opacity: calc(0.4 + 0.4 * var(--lift, 0));
-  transform: translateY(calc(var(--lift, 0) * 16px)) scaleX(calc(1 + var(--lift, 0) * 0.1));
+  opacity: calc(0.3 + 0.5 * var(--lift, 0));
+  transform: translateY(calc(var(--lift, 0) * 8px)) scaleX(calc(1 + var(--lift, 0) * 0.08));
   pointer-events: none;
 }
 
 .ring .deck-card::after {
   content: '';
   position: absolute;
-  inset: 0;
-  border-radius: 14px;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 177, 92, 0.42),
-    inset 0 1px 0 rgba(255, 220, 180, 0.22),
-    0 0 56px -12px rgba(255, 177, 92, 0.3);
+  inset: -6px;
+  border: 2px solid rgba(255, 246, 235, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 0 36px -6px rgba(255, 177, 92, 0.4);
   opacity: var(--lift, 0);
-  pointer-events: none;
-}
-
-.ring .deck-card .entry-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 55%;
-  background: linear-gradient(100deg, rgba(255, 240, 220, 0) 10%, rgba(255, 240, 220, 0.09) 50%, rgba(255, 240, 220, 0) 90%);
-  opacity: var(--sheen, 0);
-  transform: translateX(var(--sheen-x, -110%));
-  pointer-events: none;
-}
-
-.ring .deck::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: calc(50% + var(--card-h) / 2 - 72px);
-  width: calc(var(--card-w) * 1.9);
-  height: 176px;
-  transform: translateX(-50%);
-  background: radial-gradient(closest-side, rgba(255, 196, 140, 0.13), rgba(255, 196, 140, 0.04) 60%, rgba(255, 196, 140, 0));
-  opacity: var(--stage, 1);
   pointer-events: none;
 }
 
