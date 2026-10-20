@@ -23,11 +23,13 @@ export const profile = {
 // The contact section at the end.
 export const contact = {
   email: 'ayushsingh10580@gmail.com',
-  // With no endpoint, "Send" opens the visitor's email app with the message filled in.
-  // For messages straight to your inbox, use a free form service:
+  // "Send" posts the form to api/contact.js, which emails it to you through Resend (the key is
+  // RESEND_API_KEY in .env and in Vercel's environment variables). With no endpoint, or where
+  // the function isn't running (npm run dev), "Send" opens the visitor's email app instead.
+  // A form service works too, instead:
   //   Formspree: endpoint: 'https://formspree.io/f/<your-form-id>'
   //   Web3Forms: endpoint: 'https://api.web3forms.com/submit', extraFields: { access_key: '<your-key>' }
-  endpoint: null,
+  endpoint: '/api/contact',
   extraFields: {},
   // Conversation starters floating beside the form; clicking one starts the message.
   topics: [

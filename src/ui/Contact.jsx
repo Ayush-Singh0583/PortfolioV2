@@ -244,22 +244,25 @@ function ContactForm({ messageRef, onMessage, onName, onSent, onRestore }) {
       form.current.elements[first].focus()
       return
     }
-    if (!contact.endpoint) {
+    // The visitor's own email app, with the message filled in.
+    const openMail = () => {
       const subject = `Portfolio: message from ${data.name}`
       const body = `${data.message}\n\n— ${data.name} (${data.email})`
       window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
       setStatus('mailto')
       saveDraft(null)
       onSent()
-      return
     }
+    if (!contact.endpoint) return openMail()
     setStatus('sending')
     try {
       const res = await fetch(contact.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ ...contact.extraFields, name: data.name, email: data.email, message: data.message }),
+        body: JSON.stringify({ ...contact.extraFields, name: data.name, email: data.email, message: data.message, company: data.company }),
       })
+      // No endpoint where the site runs (npm run dev, or a host without functions): fall back to email.
+      if (res.status === 404) return openMail()
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       form.current.reset()
       saveDraft(null)
